@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 *.env
+php/api/config.php
 
 # Uploaded files (user data)
 backend/uploads/*

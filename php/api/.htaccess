@@ -1,0 +1,10 @@
+# Route everything inside /api/ through index.php
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
+
+# Block direct access to config + helper files
+<FilesMatch "^(config|db)\.php$">
+  Require all denied
+</FilesMatch>
