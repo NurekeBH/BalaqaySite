@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>采购账款管理系统</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --border2: #cbd5e1;
+    --text: #1e293b;
+    --text2: #64748b;
+    --text3: #94a3b8;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --blue-border: #bfdbfe;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #bbf7d0;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --red-border: #fecaca;
+    --yellow-light: #fffbeb;
+    --yellow-border: #fde68a;
+    --yellow: #d97706;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 32px; height: 32px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+  .header h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .rate-box { display: flex; align-items: center; gap: 6px; background: var(--blue-light); border: 1px solid var(--blue-border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 15px; color: var(--blue); }
+  .rate-box input { width: 64px; border: none; background: transparent; color: var(--blue); font-size: 15px; font-weight: 500; outline: none; font-family: inherit; }
+
+  /* Main */
+  .main { max-width: 1280px; margin: 0 auto; padding: 24px 20px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 14px; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
+
+  /* Sections */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+  .section-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: var(--bg); }
+  .section-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .section-icon { font-size: 18px; }
+  .chevron { font-size: 14px; color: var(--text3); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(90deg); }
+  .section-body { padding: 18px; }
+  .section-body.hidden { display: none; }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1.2fr 1.8fr 1.3fr 1.3fr 1.3fr 1.5fr auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+  .form-grid3 { display: grid; grid-template-columns: 2fr 1.5fr auto; gap: 10px; align-items: end; }
+  .field label { display: block; font-size: 14px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  .field input, .field select {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface);
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .preview-hint {
+    font-size: 14px;
+    color: var(--text2);
+    background: var(--blue-light);
+    border: 1px solid var(--blue-border);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    margin-top: 4px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Photo upload area (inline) */
+  .photo-area {
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-top: 10px;
+    background: var(--bg);
+  }
+  .photo-area-label {
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .photo-upload-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .photo-upload-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+  .photo-upload-btn input { display: none; }
+  .photo-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .photo-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .photo-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+  .photo-item-del {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* Buttons */
+  .btn {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 15px;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--bg); border-color: var(--text3); }
+  .btn-primary { background: var(--blue); color: white; border-color: var(--blue); }
+  .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+  .btn-danger { color: var(--red); border-color: var(--red-border); }
+  .btn-danger:hover { background: var(--red-light); }
+  .btn-sm { height: 28px; padding: 0 10px; font-size: 14px; }
+  .btn-icon { width: 28px; height: 28px; padding: 0; justify-content: center; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .search-input { flex: 1; height: 34px; padding: 0 10px 0 32px; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 15px; color: var(--text); background: var(--surface); font-family: inherit; outline: none; position: relative; }
+  .search-wrap { position: relative; flex: 1; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 16px; pointer-events: none; }
+  .search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+  /* Filter tabs */
+  .filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-tab {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .filter-tab:hover { background: var(--bg); }
+  .filter-tab.active { background: var(--blue-light); border-color: var(--blue-border); color: var(--blue); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; font-size: 13px; font-weight: 600; color: var(--text2); padding: 8px 12px; border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  th.num { text-align: right; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .badge-green { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-red { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+  .badge-yellow { background: var(--yellow-light); color: var(--yellow); border: 1px solid var(--yellow-border); }
+
+  /* Progress bar */
+  .progress-wrap { display: flex; align-items: center; gap: 6px; }
+  .progress-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; min-width: 50px; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--blue); transition: width 0.3s; }
+  .progress-fill.full { background: var(--green); }
+  .progress-fill.low { background: var(--red); }
+  .progress-pct { font-size: 13px; color: var(--text2); min-width: 28px; }
+
+  /* Photo cell */
+  .photo-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .photo-thumb-small {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    object-fit: cover;
+    cursor: pointer;
+  }
+  .photo-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    background: var(--blue-light);
+    color: var(--blue);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .photo-count-badge:hover { background: var(--blue); color: white; }
+  .photo-count-badge.empty { background: var(--bg); color: var(--text3); }
+  .photo-count-badge.empty:hover { background: var(--blue-light); color: var(--blue); }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
+  .empty-icon { font-size: 38px; margin-bottom: 10px; }
+  .empty p { font-size: 16px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e293b;
+    color: white;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Supplier name cell */
+  .sup-name { font-weight: 600; color: var(--text); }
+  .sup-cat { font-size: 13px; color: var(--text3); }
+
+  /* Shipping status pills */
+  .ship-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    white-space: nowrap;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .ship-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+  .ship-none { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+  .ship-ordered { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .ship-shipped { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+  .ship-transit { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+  .ship-delayed { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; animation: pulse-red 2s infinite; }
+  .ship-arrived { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(220,38,38,0); }
+  }
+
+  /* Shipping status dropdown */
+  .ship-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  .ship-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    z-index: 100;
+    padding: 4px;
+    min-width: 130px;
+    display: none;
+  }
+  .ship-menu.show { display: block; }
+  .ship-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .ship-menu-item:hover { background: var(--bg); }
+  .ship-menu-item.active { background: var(--blue-light); color: var(--blue); }
+  .ship-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Payment records list & badge */
+  .pay-records-list { display: flex; flex-direction: column; gap: 8px; }
+  .pay-record {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .pay-record-date {
+    font-size: 13px;
+    color: var(--text2);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .pay-record-date strong { display:block; font-size: 16px; color: var(--text); font-weight: 700; }
+  .pay-record-amount {
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .pay-record-note { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .pay-record-thumb {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    object-fit: cover;
+    cursor: pointer;
+  }
+  .pay-record-thumb-empty {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px dashed var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--text3); cursor: pointer;
+  }
+  .pay-record-actions { display: flex; gap: 4px; }
+
+  /* Payment cell in main table */
+  .pay-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+  }
+  .pay-cell-amount {
+    font-weight: 600;
+    color: var(--green);
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+  }
+  .pay-cell-count {
+    font-size: 12px;
+    color: var(--blue);
+    background: var(--blue-light);
+    padding: 1px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .pay-cell-count:hover { background: var(--blue); color: white; }
+  .pay-cell-count.empty { background: var(--bg); color: var(--text3); }
+  .pay-cell-count.empty:hover { background: var(--blue-light); color: var(--blue); }
+
+  /* Edit row */
+  tr.editing td { background: var(--blue-light) !important; }
+  .edit-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--blue);
+    border-radius: 4px;
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+  }
+  .edit-input-sm { padding: 0 6px; font-size: 14px; }
+
+  /* Photo Modal */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 17px; font-weight: 600; }
+  .modal-close { background: none; border: none; cursor: pointer; padding: 4px 8px; font-size: 20px; color: var(--text2); }
+  .modal-body { padding: 18px; overflow-y: auto; }
+
+  .modal-photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .modal-photo {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .modal-photo img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+  .modal-photo-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    background: rgba(220,38,38,0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .modal-upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text2);
+    margin-bottom: 14px;
+    transition: all 0.15s;
+  }
+  .modal-upload-zone:hover { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+  .modal-upload-zone input { display: none; }
+
+  /* Photo viewer */
+  .viewer-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 30px;
+  }
+  .viewer-bg.show { display: flex; }
+  .viewer-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .viewer-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border: none; border-radius: 50%;
+    color: white; font-size: 22px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 768px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid3 { grid-template-columns: 1fr; }
+  }
+
+  /* Top tab bar */
+  .view-tabs { display: flex; gap: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+  .view-tab { flex: 1; padding: 14px 18px; background: transparent; border: none; cursor: pointer; font-family: inherit; font-size: 17px; font-weight: 600; color: var(--text2); transition: all 0.15s; border-bottom: 3px solid transparent; }
+  .view-tab:hover { background: var(--bg); color: var(--text); }
+  .view-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--blue-light); }
+
+  .view-pane { display: none; }
+  .view-pane.active { display: block; }
+
+  /* Supplier cards */
+  .supplier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+  .supplier-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); position: relative; }
+  .supplier-card.pinned { border-color: var(--blue); border-width: 2px; }
+  .supplier-card.tag-strict { border-left: 4px solid var(--red); }
+  .supplier-card.tag-important { border-left: 4px solid var(--yellow); }
+  .supplier-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px; }
+  .supplier-name { font-size: 18px; font-weight: 700; color: var(--text); }
+  .supplier-tag { display: inline-block; font-size: 13px; padding: 3px 8px; border-radius: 4px; margin-top: 4px; }
+  .supplier-tag.strict { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+  .supplier-tag.flexible { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+  .supplier-tag.important { background: var(--yellow-light); color: var(--yellow); border: 1px solid var(--yellow-border); }
+  .supplier-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-bottom: 12px; font-size: 15px; }
+  .supplier-stats .lbl { color: var(--text3); font-size: 13px; }
+  .supplier-stats .val { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  .supplier-stats .val.debt { color: var(--red); font-size: 18px; }
+  .supplier-stats .val.balance { color: var(--green); }
+  .supplier-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .supplier-actions .btn { flex: 1; min-width: 110px; }
+  .supplier-detail { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border2); display: none; }
+  .supplier-detail.show { display: block; }
+  .supplier-detail h4 { font-size: 14px; color: var(--text2); margin-bottom: 6px; font-weight: 600; }
+  .supplier-order-row, .supplier-payment-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .supplier-order-row:last-child, .supplier-payment-row:last-child { border-bottom: none; }
+  .supplier-order-row .meta, .supplier-payment-row .meta { color: var(--text3); font-size: 12px; }
+
+  /* Month group headers */
+  .month-group { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .month-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg); cursor: pointer; user-select: none; }
+  .month-group-header:hover { background: var(--border); }
+  .month-group-title { font-weight: 700; font-size: 16px; }
+  .month-group-summary { color: var(--text2); font-size: 13px; }
+  .month-group-body { display: none; }
+  .month-group.open .month-group-body { display: block; }
+  .month-group .chevron { transition: transform 0.2s; }
+  .month-group.open .chevron { transform: rotate(90deg); }
+
+  /* Payment kind radio */
+  .paykind-options { display: grid; gap: 8px; margin-bottom: 12px; }
+  .paykind-option { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; }
+  .paykind-option:hover { background: var(--bg); }
+  .paykind-option.selected { border-color: var(--blue); background: var(--blue-light); }
+  .paykind-option input { margin-top: 3px; }
+  .paykind-option .lbl { font-weight: 600; }
+  .paykind-option .help { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* Allocation pill in order row */
+  .alloc-list { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .alloc-pill { display: inline-block; background: var(--blue-light); color: var(--blue); padding: 2px 6px; border-radius: 4px; margin-right: 4px; font-size: 11px; }
+  .alloc-pill.auto { background: #f3f4f6; color: var(--text2); }
+
+  /* Supplier category group */
+  .cat-head {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 10px 4px 8px;
+    border-bottom: 2px solid var(--border);
+    cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .cat-head:hover { background: var(--bg); }
+  .cat-head .chev { color: var(--text3); font-size: 14px; transition: transform 0.2s; display: inline-block; align-self: center; }
+  .cat-group.open .cat-head .chev { transform: rotate(90deg); }
+  .cat-head .count {
+    background: var(--bg); color: var(--text2);
+    padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border);
+    align-self: center;
+  }
+  .cat-head .sum { color: var(--text3); font-size: 14px; margin-left: auto; align-self: center; }
+
+  /* Logistics view */
+  .lg-group { margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+  .lg-group.lg-delayed { border-left: 4px solid var(--red); }
+  .lg-group.lg-transit  { border-left: 4px solid var(--blue); }
+  .lg-group.lg-shipped  { border-left: 4px solid #6366f1; }
+  .lg-group.lg-ordered  { border-left: 4px solid var(--yellow); }
+  .lg-group.lg-arrived  { border-left: 4px solid var(--green); }
+  .lg-group.lg-none     { border-left: 4px solid var(--text3); }
+  .lg-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer; user-select: none;
+    background: var(--surface);
+    transition: background 0.15s;
+  }
+  .lg-head:hover { background: var(--bg); }
+  .lg-head .chev { color: var(--text3); font-size: 14px; transition: transform 0.2s; display: inline-block; }
+  .lg-group.open .lg-head .chev { transform: rotate(90deg); }
+  .lg-head .title { font-size: 17px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .lg-head .count {
+    background: var(--bg); color: var(--text2);
+    padding: 2px 10px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .lg-group.lg-delayed .lg-head .count { background: var(--red-light); color: var(--red); border-color: var(--red-border); }
+  .lg-group.lg-transit  .lg-head .count { background: var(--blue-light); color: var(--blue); border-color: var(--blue-border); }
+  .lg-group.lg-arrived  .lg-head .count { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
+  .lg-head .sum { color: var(--text3); font-size: 13px; margin-left: auto; }
+  .lg-body { display: none; border-top: 1px solid var(--border); }
+  .lg-group.open .lg-body { display: block; }
+
+  .lg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .lg-table thead th {
+    text-align: left; font-weight: 600; color: var(--text3);
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 10px 14px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .lg-table thead th.num { text-align: right; }
+  .lg-table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .lg-table tbody tr:last-child td { border-bottom: none; }
+  .lg-table tbody tr:hover { background: var(--bg); }
+  .lg-table .sup { font-weight: 600; color: var(--text); }
+  .lg-table .cat { color: var(--text3); font-size: 12px; }
+  .lg-table .meta { color: var(--text3); font-size: 12px; white-space: nowrap; }
+  .lg-table .amt { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
+  .lg-table .progress-cell { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .lg-table .progress-cell.overdue { color: var(--red); font-weight: 700; }
+  .lg-table .progress-cell.soon { color: var(--yellow); font-weight: 600; }
+  .lg-table .progress-cell.far { color: var(--text3); }
+  .lg-table .note-cell { color: var(--text2); font-size: 13px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lg-table .act { width: 1%; white-space: nowrap; }
+  .lg-edit { background: transparent; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 8px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--text2); }
+  .lg-edit:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+</style>
+<script src="i18n.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">🏪</div>
+    <h1 data-i18n="app.title">采购账款管理系统</h1>
+  </div>
+  <div class="header-right">
+    <select id="lang-select" onchange="setLang(this.value)" style="height:32px;padding:0 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);font-size: 15px;font-family:inherit;cursor:pointer">
+      <option value="zh">🇨🇳 中文</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="kk">🇰🇿 Қазақша</option>
+    </select>
+    <div class="rate-box">
+      <span>¥ 1 =</span>
+      <input type="number" id="rate" value="65.5" step="0.1" data-i18n-title="app.rateTitle" title="人民币兑坚戈汇率">
+      <span>тг</span>
+    </div>
+    <button class="btn" data-i18n="btn.export" onclick="exportCSV()">⬇ 导出CSV</button>
+    <button class="btn" data-i18n="btn.print" onclick="printPage()">🖨 打印</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- View tabs -->
+  <div class="view-tabs">
+    <button class="view-tab" id="tab-suppliers" data-i18n="tab.suppliers" onclick="showView('suppliers')">👤 供应商视角</button>
+    <button class="view-tab" id="tab-orders" data-i18n="tab.orders" onclick="showView('orders')">📋 订单视角</button>
+    <button class="view-tab" id="tab-logistics" data-i18n="tab.logistics" onclick="showView('logistics')">🚛 物流信息</button>
+    <button class="view-tab" id="tab-todo" data-i18n="tab.todo" onclick="showView('todo')">🔥 待办</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label" data-i18n="stat.suppliers">📦 供应商总数</div>
+      <div class="stat-value" id="s-count">0</div>
+      <div class="stat-sub" id="s-debt-count">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" data-i18n="stat.totalOrder">💰 订单总额</div>
+      <div class="stat-value" id="s-total">0</div>
+      <div class="stat-sub" id="s-total-tg">0 тг</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" data-i18n="stat.totalPaid">✅ 已付总额</div>
+      <div class="stat-value green" id="s-paid">0</div>
+      <div class="stat-sub" id="s-paid-tg">0 тг</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" data-i18n="stat.debt">⚠️ 欠款总额</div>
+      <div class="stat-value red" id="s-debt">0</div>
+      <div class="stat-sub" id="s-debt-tg">0 тг</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label" data-i18n="stat.transit">🚛 在途/延期</div>
+      <div class="stat-value" id="s-transit" style="color:var(--yellow)">0</div>
+      <div class="stat-sub" id="s-transit-sub">0</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TODO VIEW ═══════════════ -->
+  <div class="view-pane" id="view-todo">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">🔥</span> <span data-i18n="tab.todo">待办</span></div>
+      </div>
+      <div class="section-body">
+        <div id="todo-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ORDERS VIEW ═══════════════ -->
+  <div class="view-pane" id="view-orders">
+
+  <!-- Add Order -->
+  <div class="section">
+    <div class="section-header" onclick="toggle('add-body', this)">
+      <div class="section-title"><span class="section-icon">➕</span> <span data-i18n="sec.addOrder">添加新订单</span></div>
+      <span class="chevron open">▶</span>
+    </div>
+    <div class="section-body" id="add-body">
+      <div class="form-grid">
+        <div class="field"><label data-i18n="field.date">下单日期</label><input id="f-date" type="date" /></div>
+        <div class="field"><label data-i18n="field.supplier">供应商名称</label><input id="f-name" data-i18n-ph="field.supplierPh" placeholder="例：天才少年" list="supplier-list" /></div>
+        <div class="field"><label data-i18n="field.category">商品类别</label>
+          <select id="f-cat">
+            <option value="箱包" data-i18n="cat.boxes">箱包</option>
+            <option value="服装-童装" data-i18n="cat.clothesKids">服装-童装</option>
+            <option value="服装-成人" data-i18n="cat.clothesAdult">服装-成人</option>
+            <option value="鞋类" data-i18n="cat.shoes">鞋类</option>
+            <option value="帽子" data-i18n="cat.hats">帽子</option>
+            <option value="义乌杂货" data-i18n="cat.yiwu">义乌杂货</option>
+            <option value="其他" data-i18n="cat.other">其他</option>
+          </select>
+        </div>
+        <div class="field"><label data-i18n="field.amount">订单金额（¥）</label><input id="f-total" type="number" placeholder="0" /></div>
+        <div class="field"><label data-i18n="field.paid">已付金额（¥）</label><input id="f-paid" type="number" placeholder="0" /></div>
+        <div class="field"><label data-i18n="field.note">备注</label><input id="f-note" data-i18n-ph="field.notePh" placeholder="可空" /></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" data-i18n="field.btnAdd" onclick="addOrder()">✓ 添加</button></div>
+      </div>
+      <datalist id="supplier-list"></datalist>
+      <div class="preview-hint" id="preview" data-i18n="hint.preview">输入金额后自动显示坚戈换算结果</div>
+
+      <!-- Shipping info area -->
+      <div class="photo-area" style="background:#fffbeb;border-color:var(--yellow-border)">
+        <div class="photo-area-label" data-i18n="hint.shipping" style="margin-bottom:10px">
+          🚛 物流信息（可选）
+        </div>
+        <div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.3fr;gap:10px">
+          <div class="field"><label data-i18n="field.shipStatus">物流状态</label>
+            <select id="f-ship">
+              <option value="ordered" data-i18n="selOpt.ordered">📦 未发货</option>
+              <option value="shipped" data-i18n="selOpt.shipped">📤 已发货</option>
+              <option value="transit" data-i18n="selOpt.transit">🚛 在途中</option>
+              <option value="delayed" data-i18n="selOpt.delayed">⚠️ 延期</option>
+              <option value="arrived" data-i18n="selOpt.arrived">✅ 已到货</option>
+            </select>
+          </div>
+          <div class="field"><label data-i18n="field.shipDate">发货日期</label><input id="f-ship-date" type="date" /></div>
+          <div class="field"><label data-i18n="field.eta">预计到货</label><input id="f-eta-date" type="date" /></div>
+        </div>
+        <div style="font-size: 13px;color:var(--text3);margin-top:8px" data-i18n="hint.etaTip">💡 填了"预计到货"日期后，过期未到的订单会自动标记为延期</div>
+      </div>
+
+      <!-- Photo upload area for new order -->
+      <div class="photo-area">
+        <div class="photo-area-label">
+          <span data-i18n="hint.photos">📷 清单照片（可选）</span>
+          <label class="photo-upload-btn">
+            <span data-i18n="btn.addImage">+ 添加图片</span>
+            <input type="file" accept="image/*" multiple onchange="handleNewOrderPhoto(event)" />
+          </label>
+        </div>
+        <div class="photo-list" id="new-order-photos"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Payment -->
+  <div class="section">
+    <div class="section-header" onclick="toggle('pay-body', this)">
+      <div class="section-title"><span class="section-icon">💸</span> <span data-i18n="sec.recordPayment">记录付款</span></div>
+      <span class="chevron open">▶</span>
+    </div>
+    <div class="section-body" id="pay-body">
+      <div class="form-grid3">
+        <div class="field"><label data-i18n="pay.selectSupplier">选择供应商订单</label>
+          <select id="p-name"><option value="" data-i18n="select.placeholder">-- 请选择 --</option></select>
+        </div>
+        <div class="field"><label>&nbsp;</label>
+          <button class="btn btn-primary" data-i18n="pay.quickBtn" onclick="quickPayFromSelect()">💸 录入付款（带日期+凭证）</button>
+        </div>
+      </div>
+      <div class="preview-hint" id="pay-preview" data-i18n="pay.preview" style="margin-top:8px">选择供应商后显示订单详情，付款时可填日期、备注、上传凭证图片</div>
+    </div>
+  </div>
+
+  <!-- Order List -->
+  <div class="section">
+    <div class="section-header" onclick="toggle('list-body', this)">
+      <div class="section-title"><span class="section-icon">📋</span> <span data-i18n="sec.orderList">订单列表</span></div>
+      <span class="chevron open">▶</span>
+    </div>
+    <div class="section-body" id="list-body">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search" data-i18n-ph="search.placeholder" placeholder="搜索供应商名称、备注..." oninput="renderTable()" />
+        </div>
+      </div>
+      <div class="filters">
+        <button class="filter-tab active" data-i18n="filter.all" onclick="setFilter('all',this)">全部</button>
+        <button class="filter-tab" data-i18n="filter.debt" onclick="setFilter('debt',this)">有欠款</button>
+        <button class="filter-tab" data-i18n="filter.ok" onclick="setFilter('ok',this)">已结清</button>
+        <span style="width:1px;background:var(--border);align-self:stretch;margin:0 4px"></span>
+        <button class="filter-tab" data-i18n="selOpt.ordered" onclick="setFilter('ship-ordered',this)">📦 未发</button>
+        <button class="filter-tab" data-i18n="selOpt.shipped" onclick="setFilter('ship-shipped',this)">📤 已发</button>
+        <button class="filter-tab" data-i18n="filter.transit" onclick="setFilter('ship-transit',this)">🚛 在途</button>
+        <button class="filter-tab" data-i18n="filter.delayed" onclick="setFilter('ship-delayed',this)" style="color:var(--red);font-weight:700">⚠️ 延期</button>
+        <button class="filter-tab" data-i18n="selOpt.arrived" onclick="setFilter('ship-arrived',this)">✅ 已到</button>
+        <span style="width:1px;background:var(--border);align-self:stretch;margin:0 4px"></span>
+        <button class="filter-tab" data-i18n="cat.boxes" onclick="setFilter('箱包',this)">箱包</button>
+        <button class="filter-tab" data-i18n="filter.clothes" onclick="setFilter('服装',this)">服装</button>
+        <button class="filter-tab" data-i18n="cat.shoes" onclick="setFilter('鞋类',this)">鞋类</button>
+        <button class="filter-tab" data-i18n="cat.hats" onclick="setFilter('帽子',this)">帽子</button>
+        <button class="filter-tab" data-i18n="cat.yiwu" onclick="setFilter('义乌杂货',this)">义乌</button>
+        <button class="filter-tab" data-i18n="cat.other" onclick="setFilter('其他',this)">其他</button>
+      </div>
+      <div class="table-wrap" id="table-wrap"></div>
+    </div>
+  </div>
+
+  </div><!-- /view-orders -->
+
+  <!-- ═══════════════ LOGISTICS VIEW ═══════════════ -->
+  <div class="view-pane" id="view-logistics">
+    <div id="logistics-content"></div>
+  </div>
+
+  <!-- ═══════════════ SUPPLIERS VIEW ═══════════════ -->
+  <div class="view-pane" id="view-suppliers">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title"><span class="section-icon">👤</span> <span data-i18n="tab.suppliers">供应商视角</span></div>
+      </div>
+      <div class="section-body">
+        <div class="supplier-grid" id="supplier-grid"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Photo modal (manage photos for an order) -->
+<div class="modal-bg" id="photo-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="photo-modal-title">📷</div>
+      <button class="modal-close" onclick="closePhotoModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="modal-upload-zone" for="modal-photo-input">
+        <div style="font-size: 30px;margin-bottom:6px">📷</div>
+        <div style="font-weight:500" data-i18n="photos.uploadHint">点击上传清单照片</div>
+        <div style="font-size: 14px;margin-top:4px" data-i18n="photos.multiHint">支持多张 · 自动压缩</div>
+        <input type="file" id="modal-photo-input" accept="image/*" multiple onchange="addPhotosToOrder(event)" />
+      </label>
+      <div class="modal-photo-grid" id="modal-photo-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment records modal -->
+<div class="modal-bg" id="pay-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title" id="pay-modal-title">💸</div>
+      <button class="modal-close" onclick="closePayModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="pay-modal-summary" style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:14px;font-size: 15px;color:var(--text2)"></div>
+
+      <!-- Add new payment form -->
+      <div style="border:1px dashed var(--blue);background:var(--blue-light);padding:14px;border-radius:var(--radius-sm);margin-bottom:14px">
+        <div style="font-size: 14px;color:var(--blue);font-weight:600;margin-bottom:10px" data-i18n="pay.addNew">＋ 添加新付款</div>
+
+        <!-- Payment kind radios -->
+        <div class="paykind-options" id="paykind-options">
+          <label class="paykind-option selected" data-kind="order">
+            <input type="radio" name="paykind" value="order" checked onchange="updatePayKindUI()" />
+            <div>
+              <div class="lbl" data-i18n="paykind.order">🎯 指定订单</div>
+              <div class="help" data-i18n="paykind.orderHelp">这笔钱是指定订单的（如尾款）</div>
+            </div>
+          </label>
+          <label class="paykind-option" data-kind="account">
+            <input type="radio" name="paykind" value="account" onchange="updatePayKindUI()" />
+            <div>
+              <div class="lbl" data-i18n="paykind.account">💼 入供应商账户（FIFO 自动冲抵）</div>
+              <div class="help" data-i18n="paykind.accountHelp">钱打到供应商账户，系统从最早的未付清订单开始抵扣</div>
+            </div>
+          </label>
+          <label class="paykind-option" data-kind="prepaid">
+            <input type="radio" name="paykind" value="prepaid" onchange="updatePayKindUI()" />
+            <div>
+              <div class="lbl" data-i18n="paykind.prepaid">🤝 预存款</div>
+              <div class="help" data-i18n="paykind.prepaidHelp">提前给供应商钱，下次下新订单时自动使用</div>
+            </div>
+          </label>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.2fr 1.5fr 2fr;gap:10px;margin-bottom:10px">
+          <div class="field"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="pay.date">付款日期</label>
+            <input id="new-pay-date" type="date" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none" />
+          </div>
+          <div class="field"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="pay.amount">金额（¥）</label>
+            <input id="new-pay-amount" type="number" placeholder="0" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none" />
+          </div>
+          <div class="field"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="pay.noteLabel">备注（可选）</label>
+            <input id="new-pay-note" data-i18n-ph="pay.notePh" placeholder="例：预付款 / 尾款 / 电汇" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none" />
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label class="photo-upload-btn" style="flex-shrink:0">
+            <span data-i18n="pay.uploadProof">📷 上传汇款凭证</span>
+            <input type="file" accept="image/*" onchange="handlePayPhotoUpload(event)" />
+          </label>
+          <div id="new-pay-photo-preview" style="display:flex;align-items:center;gap:8px;flex:1"></div>
+          <button class="btn btn-primary" data-i18n="pay.save" onclick="addPaymentRecord()">✓ 保存付款</button>
+        </div>
+      </div>
+
+      <!-- Existing payment records list -->
+      <div style="font-size: 14px;color:var(--text2);font-weight:600;margin-bottom:8px" data-i18n="pay.existing">已有付款记录</div>
+      <div class="pay-records-list" id="pay-records-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Shipping date modal -->
+<div class="modal-bg" id="ship-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="ship-modal-title">🚛</div>
+      <button class="modal-close" onclick="closeShipModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:14px"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="field.shipStatus">物流状态</label>
+        <select id="ship-modal-status" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none">
+          <option value="ordered" data-i18n="selOpt.ordered">📦 未发货</option>
+          <option value="shipped" data-i18n="selOpt.shipped">📤 已发货</option>
+          <option value="transit" data-i18n="selOpt.transit">🚛 在途中</option>
+          <option value="delayed" data-i18n="selOpt.delayed">⚠️ 延期</option>
+          <option value="arrived" data-i18n="selOpt.arrived">✅ 已到货</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="field"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="field.shipDate">发货日期</label>
+          <input id="ship-modal-ship-date" type="date" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none" />
+        </div>
+        <div class="field"><label style="display:block;font-size: 14px;color:var(--text2);margin-bottom:5px;font-weight:500" data-i18n="field.eta">预计到货</label>
+          <input id="ship-modal-eta-date" type="date" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-size: 15px;font-family:inherit;outline:none" />
+        </div>
+      </div>
+      <div style="font-size: 13px;color:var(--text3);margin-bottom:14px" data-i18n="shipModal.tip">💡 如果过了"预计到货"日期还没到，系统会自动标记为⚠️延期</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn" data-i18n="shipModal.cancel" onclick="closeShipModal()">取消</button>
+        <button class="btn btn-primary" data-i18n="shipModal.save" onclick="saveShipInfo()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo viewer -->
+<div class="viewer-bg" id="viewer-bg" onclick="closeViewer()">
+  <button class="viewer-close" onclick="closeViewer()">✕</button>
+  <img class="viewer-img" id="viewer-img" />
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── API client ────────────────────────────────────────
+const API = (location.origin.startsWith('http') ? '' : 'http://localhost:3001') + '/api';
+
+async function apiGet(p)            { const r = await fetch(API+p); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+async function apiSend(method, p, body) {
+  const r = await fetch(API+p, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+const apiPost   = (p, b) => apiSend('POST',   p, b);
+const apiPut    = (p, b) => apiSend('PUT',    p, b);
+const apiDelete = (p, b) => apiSend('DELETE', p, b);
+
+async function uploadPhoto(file) {
+  const blob = await compressImageToBlob(file);
+  const fd = new FormData();
+  fd.append('photo', blob, 'photo.jpg');
+  const r = await fetch(API + '/photos/upload', { method: 'POST', body: fd });
+  if (!r.ok) throw new Error(await r.text());
+  const { url } = await r.json();
+  return url;
+}
+
+function photoSrc(p) {
+  if (!p) return '';
+  if (p.startsWith('data:') || p.startsWith('http')) return p;
+  // url like /uploads/xxx.jpg — prefix with backend origin when served from file://
+  return (location.origin.startsWith('http') ? '' : 'http://localhost:3001') + p;
+}
+
+// ── Data ──────────────────────────────────────────────
+let orders = [];
+let suppliers = [];
+let activeFilter = 'all';
+let activeView = 'todo';   // 'todo' | 'orders' | 'suppliers'
+let pendingPhotos = [];      // uploaded URLs awaiting attachment to a new order
+let currentPhotoOrderId = null;
+let expandedSuppliers = new Set();
+let expandedCategories = new Set();   // empty = all collapsed by default
+let expandedTodoSections = new Set(); // empty = all collapsed by default
+let expandedLogisticsGroups = new Set(); // empty = all collapsed by default
+let expandedMonthGroups = new Set();  // empty = all collapsed by default
+
+function supplierById(id) { return suppliers.find(s => s.id === id); }
+
+async function loadData() {
+  try {
+    [orders, suppliers] = await Promise.all([apiGet('/orders'), apiGet('/suppliers')]);
+  } catch (e) {
+    console.error(e);
+    alert(t('alert.backendConn'));
+    orders = []; suppliers = [];
+  }
+}
+
+async function loadSettings() {
+  try {
+    const s = await apiGet('/settings');
+    if (s.rate) document.getElementById('rate').value = s.rate;
+    if (s.lang && window.I18N[s.lang]) {
+      window.CURRENT_LANG = s.lang;
+      localStorage.setItem('lang', s.lang);
+    }
+  } catch (e) { /* ignore */ }
+  document.getElementById('lang-select').value = window.CURRENT_LANG;
+  document.documentElement.lang = window.CURRENT_LANG === 'zh' ? 'zh-CN' : window.CURRENT_LANG;
+  window.applyTranslations();
+}
+
+async function saveRate(v) {
+  try { await apiPut('/settings/rate', { value: v }); } catch (e) { console.error(e); }
+}
+
+// ── Helpers ───────────────────────────────────────────
+function getRate() { return parseFloat(document.getElementById('rate').value) || 65.5; }
+const CAT_KEYS = {'箱包':'cat.boxes','服装-童装':'cat.clothesKids','服装-成人':'cat.clothesAdult','鞋类':'cat.shoes','帽子':'cat.hats','义乌杂货':'cat.yiwu','其他':'cat.other'};
+function catLabel(c) { return CAT_KEYS[c] ? t(CAT_KEYS[c]) : (c || ''); }
+function fmt(n) { return Math.round(n).toLocaleString('zh-CN'); }
+function fmtTg(n) { return fmt(n * getRate()); }  // legacy: uses current header rate (only for new-entry previews)
+function totalPaid(o) { return Number(o.paid) || 0; }
+function debt(o) { return Number(o.debt) || 0; }
+function pct(o) { return Number(o.total) > 0 ? Math.round(totalPaid(o) / Number(o.total) * 100) : 100; }
+
+// Frozen-rate computations — each order/payment uses its stored rate (not the header).
+// The header rate only affects NEW entries going forward.
+function rateOf(stored) { return Number(stored) > 0 ? Number(stored) : getRate(); }
+function orderTotalTg(o) { return Number(o.total) * rateOf(o.rate); }
+function orderPaidTg(o) {
+  return (o.allocations || []).reduce((acc, a) => acc + Number(a.amount) * rateOf(a.paymentRate), 0);
+}
+function orderDebtTg(o) { return Math.max(0, orderTotalTg(o) - orderPaidTg(o)); }
+
+// ── View switching ────────────────────────────────────
+window.showView = function (name) {
+  activeView = name;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('view-' + name).classList.add('active');
+  if (name === 'suppliers') renderSuppliers();
+  else if (name === 'todo') renderTodo();
+  else if (name === 'logistics') renderLogistics();
+  else if (name === 'orders') renderTable();
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Shipping Status ───────────────────────────────────
+const SHIP_STATUSES = [
+  { key: 'none',     i18n: 'ship.none',    icon: '⚪', cls: 'ship-none' },
+  { key: 'ordered',  i18n: 'ship.ordered', icon: '📦', cls: 'ship-ordered' },
+  { key: 'shipped',  i18n: 'ship.shipped', icon: '📤', cls: 'ship-shipped' },
+  { key: 'transit',  i18n: 'ship.transit', icon: '🚛', cls: 'ship-transit' },
+  { key: 'delayed',  i18n: 'ship.delayed', icon: '⚠️', cls: 'ship-delayed' },
+  { key: 'arrived',  i18n: 'ship.arrived', icon: '✅', cls: 'ship-arrived' },
+];
+function shipLabel(s) { return t(s.i18n); }
+
+function effectiveShipStatus(o) {
+  const userStatus = o.ship || 'none';
+  if (userStatus === 'delayed' || userStatus === 'arrived' || userStatus === 'none') return userStatus;
+  if (o.etaDate) {
+    const today = new Date().toISOString().slice(0,10);
+    if (o.etaDate < today) return 'delayed';
+  }
+  return userStatus;
+}
+
+function daysOverdue(o) {
+  if (!o.etaDate) return 0;
+  const today = new Date();
+  const eta = new Date(o.etaDate);
+  const diff = Math.floor((today - eta) / 86400000);
+  return diff > 0 ? diff : 0;
+}
+
+function getShipInfo(key) {
+  return SHIP_STATUSES.find(s => s.key === key) || SHIP_STATUSES[0];
+}
+
+async function setShipStatus(orderId, key) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  o.ship = key;
+  try { await apiPut('/orders/' + orderId, { ship: key }); } catch (e) { console.error(e); }
+  renderTable();
+  renderStats();
+  const info = getShipInfo(key);
+  showToast(t('toast.shipStatus', { icon: info.icon, label: shipLabel(info) }));
+}
+
+function cycleShipStatus(orderId, event) {
+  event.stopPropagation();
+  closeAllShipMenus();
+  const menu = document.getElementById('ship-menu-' + orderId);
+  if (menu) menu.classList.add('show');
+}
+
+function closeAllShipMenus() {
+  document.querySelectorAll('.ship-menu').forEach(m => m.classList.remove('show'));
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ship-dropdown')) closeAllShipMenus();
+});
+
+// ── Payment Records Modal ─────────────────────────────
+let payModalOrderId = null;
+let payModalSupplierId = null;
+let pendingPayPhoto = '';
+
+function openPayModal(orderId) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  payModalOrderId = orderId;
+  payModalSupplierId = o.supplierId;
+  pendingPayPhoto = '';
+
+  document.getElementById('pay-modal-title').textContent = t('pay.modalTitle', { name: o.name });
+  document.getElementById('new-pay-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('new-pay-amount').value = '';
+  document.getElementById('new-pay-note').value = '';
+  document.getElementById('new-pay-photo-preview').innerHTML = '';
+  // Default to 'order' kind when opened from an order
+  document.querySelector('input[name="paykind"][value="order"]').checked = true;
+  updatePayKindUI();
+
+  renderPayModalContent();
+  document.getElementById('pay-modal').classList.add('show');
+}
+
+function closePayModal() {
+  document.getElementById('pay-modal').classList.remove('show');
+  payModalOrderId = null;
+  payModalSupplierId = null;
+  pendingPayPhoto = '';
+}
+
+window.updatePayKindUI = function () {
+  const kind = document.querySelector('input[name="paykind"]:checked').value;
+  document.querySelectorAll('.paykind-option').forEach(el => {
+    el.classList.toggle('selected', el.getAttribute('data-kind') === kind);
+  });
+};
+
+function renderPayModalContent() {
+  const rate = getRate();
+
+  if (payModalOrderId != null) {
+    const o = orders.find(x => x.id === payModalOrderId);
+    if (!o) return;
+    const paid = totalPaid(o), d = debt(o);
+    const dTg = orderDebtTg(o);
+    document.getElementById('pay-modal-summary').innerHTML = `
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        ${t('pay.summary', { total: fmt(o.total), paid: fmt(paid), debt: fmt(d),
+          c: d>0?'var(--red)':'var(--text3)', tg: d>0?`= ${fmt(dTg)} тг`:'' })}
+      </div>`;
+    if (d > 0 && !document.getElementById('new-pay-amount').value) {
+      document.getElementById('new-pay-amount').placeholder = t('pay.suggest') + ': ' + fmt(d);
+    }
+    const allocs = [...(o.allocations || [])].sort((a,b) => (b.paymentDate||'').localeCompare(a.paymentDate||''));
+    const wrap = document.getElementById('pay-records-list');
+    if (!allocs.length) {
+      wrap.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size: 15px">${t('pay.none')}</div>`;
+      return;
+    }
+    wrap.innerHTML = allocs.map(a => {
+      const dateP = (a.paymentDate||'').split('-');
+      const dateShort = dateP.length === 3 ? `<strong>${dateP[2]}</strong>.${dateP[1]}<br><span style="font-size: 12px">${dateP[0]}</span>` : (a.paymentDate||'');
+      const kindPill = a.paymentKind === 'order'
+        ? `<span class="alloc-pill">${t('alloc.byOrder')}</span>`
+        : `<span class="alloc-pill auto">${t('alloc.autoFifo')}</span>`;
+      const rateLine = a.paymentRate
+        ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">@ ${a.paymentRate} = ${fmt(a.amount * a.paymentRate)} тг</div>`
+        : '';
+      return `<div class="pay-record">
+        <div class="pay-record-date">${dateShort}</div>
+        <div>
+          <div class="pay-record-amount">¥${fmt(a.amount)} ${kindPill}</div>
+          ${a.paymentNote ? `<div class="pay-record-note">${a.paymentNote}</div>` : ''}
+          ${rateLine}
+        </div>
+        <div class="pay-record-actions">
+          <button class="btn btn-sm btn-icon btn-danger" onclick="deletePaymentBehindAlloc(${a.paymentId})" title="${t('action.delete')}">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    const s = supplierById(payModalSupplierId);
+    if (!s) return;
+    document.getElementById('pay-modal-summary').innerHTML = `
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>${t('sup.owed')}: <strong style="color:var(--red)">¥${fmt(s.owed)}</strong> <span style="color:var(--text3);font-size:12px">(${fmt(Math.max(0,s.owedTg))} тг)</span></div>
+        <div>${t('sup.balance')}: <strong style="color:var(--green)">¥${fmt(s.accountBalance)}</strong></div>
+        <div>${t('sup.totalOrdered')}: <strong>¥${fmt(s.totalOrdered)}</strong></div>
+      </div>`;
+    if (s.owed > 0) document.getElementById('new-pay-amount').placeholder = t('pay.suggest') + ': ' + fmt(s.owed);
+    document.getElementById('pay-records-list').innerHTML = `<div style="text-align:center;padding:10px;color:var(--text3);font-size: 15px">${t('paykind.accountHelp')}</div>`;
+  }
+}
+
+async function deletePaymentBehindAlloc(paymentId) {
+  if (!confirm(t('confirm.delPay'))) return;
+  try { await apiDelete('/payments/' + paymentId); }
+  catch (e) { alert(t('alert.deleteFail', { e: e.message })); return; }
+  await loadData();
+  renderPayModalContent();
+  refresh();
+  showToast(t('toast.deleted'));
+}
+
+async function handlePayPhotoUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    pendingPayPhoto = await uploadPhoto(file);
+    const ps = photoSrc(pendingPayPhoto);
+    document.getElementById('new-pay-photo-preview').innerHTML = `
+      <div class="photo-item" style="width:40px;height:40px">
+        <img src="${ps}" onclick="viewPhoto('${ps}')" />
+        <button class="photo-item-del" onclick="pendingPayPhoto='';document.getElementById('new-pay-photo-preview').innerHTML=''">✕</button>
+      </div>
+      <span style="font-size: 13px;color:var(--green);font-weight:600">${t('toast.proofChosen')}</span>
+    `;
+  } catch(e) { console.error(e); alert(t('alert.uploadFail', { e: e.message })); }
+  event.target.value = '';
+}
+
+async function addPaymentRecord() {
+  const kind = document.querySelector('input[name="paykind"]:checked').value;
+  const date = document.getElementById('new-pay-date').value;
+  const amount = parseFloat(document.getElementById('new-pay-amount').value) || 0;
+  const note = document.getElementById('new-pay-note').value.trim();
+
+  if (!date) { alert(t('alert.noPayDate')); return; }
+  if (!amount) { alert(t('alert.noAmount')); return; }
+
+  let supplierId = payModalSupplierId;
+  let orderId = null;
+  if (kind === 'order') {
+    if (payModalOrderId == null) { alert(t('alert.noSupplier')); return; }
+    orderId = payModalOrderId;
+    const o = orders.find(x => x.id === orderId);
+    if (o) {
+      const d = debt(o);
+      if (amount > d) {
+        if (!confirm(t('confirm.overpay', { amount: fmt(amount), debt: fmt(d) }))) return;
+      }
+    }
+  }
+
+  try {
+    await apiPost('/payments', {
+      supplierId, orderId, date, amount, kind, note,
+      rate: getRate(),
+      photo: pendingPayPhoto || '',
+    });
+  } catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+
+  document.getElementById('new-pay-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('new-pay-amount').value = '';
+  document.getElementById('new-pay-note').value = '';
+  document.getElementById('new-pay-photo-preview').innerHTML = '';
+  pendingPayPhoto = '';
+
+  await loadData();
+  renderPayModalContent();
+  refresh();
+  showToast(t('toast.payAdded', { amount: fmt(amount) }));
+}
+
+function quickPayFromSelect() {
+  const idStr = document.getElementById('p-name').value;
+  if (!idStr) { alert(t('alert.noSupplier')); return; }
+  openPayModal(parseInt(idStr));
+}
+
+// ── Shipping Info Modal ───────────────────────────────
+let shipModalOrderId = null;
+
+function openShipModal(orderId) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  shipModalOrderId = orderId;
+  document.getElementById('ship-modal-title').textContent = t('shipModal.title', { name: o.name });
+  document.getElementById('ship-modal-status').value = o.ship || 'ordered';
+  document.getElementById('ship-modal-ship-date').value = o.shipDate || '';
+  document.getElementById('ship-modal-eta-date').value = o.etaDate || '';
+  document.getElementById('ship-modal').classList.add('show');
+}
+
+function closeShipModal() {
+  document.getElementById('ship-modal').classList.remove('show');
+  shipModalOrderId = null;
+}
+
+async function saveShipInfo() {
+  const o = orders.find(x => x.id === shipModalOrderId);
+  if (!o) return;
+  const status = document.getElementById('ship-modal-status').value;
+  const shipDate = document.getElementById('ship-modal-ship-date').value;
+  const etaDate = document.getElementById('ship-modal-eta-date').value;
+
+  o.ship = status;
+  o.shipDate = shipDate;
+  o.etaDate = etaDate;
+
+  try {
+    await apiPut('/orders/' + o.id, { ship: status, shipDate, etaDate });
+  } catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+
+  closeShipModal();
+  renderTable();
+  renderStats();
+  showToast(t('toast.shipUpdated'));
+}
+
+// ── Photo handling (compress to Blob for multipart upload) ──
+function compressImageToBlob(file, maxDim = 1200, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = h * maxDim / w; w = maxDim; }
+        else if (h > maxDim) { w = w * maxDim / h; h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas blob failed')), 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleNewOrderPhoto(event) {
+  const files = Array.from(event.target.files || []);
+  for (const file of files) {
+    try { pendingPhotos.push(await uploadPhoto(file)); }
+    catch(e) { console.error(e); alert(t('alert.uploadFail', { e: e.message })); }
+  }
+  event.target.value = '';
+  renderPendingPhotos();
+}
+
+function renderPendingPhotos() {
+  const wrap = document.getElementById('new-order-photos');
+  wrap.innerHTML = pendingPhotos.map((src, i) => {
+    const ps = photoSrc(src);
+    return `<div class="photo-item">
+      <img src="${ps}" onclick="viewPhoto('${ps}')" />
+      <button class="photo-item-del" onclick="removePendingPhoto(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removePendingPhoto(i) {
+  pendingPhotos.splice(i, 1);
+  renderPendingPhotos();
+}
+
+// ── Photo Modal ───────────────────────────────────────
+function openPhotoModal(orderId) {
+  currentPhotoOrderId = orderId;
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  document.getElementById('photo-modal-title').textContent = t('photos.modalTitle', { name: o.name });
+  renderModalPhotos();
+  document.getElementById('photo-modal').classList.add('show');
+}
+
+function closePhotoModal() {
+  document.getElementById('photo-modal').classList.remove('show');
+  currentPhotoOrderId = null;
+}
+
+function renderModalPhotos() {
+  const o = orders.find(x => x.id === currentPhotoOrderId);
+  if (!o) return;
+  const grid = document.getElementById('modal-photo-grid');
+  const photos = o.photos || [];
+  if (!photos.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text3);font-size: 15px">${t('photos.none')}</div>`;
+    return;
+  }
+  grid.innerHTML = photos.map((src, i) => {
+    const ps = photoSrc(src);
+    return `<div class="modal-photo">
+      <img src="${ps}" onclick="viewPhoto('${ps}')" />
+      <button class="modal-photo-del" onclick="deleteOrderPhoto(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function addPhotosToOrder(event) {
+  const o = orders.find(x => x.id === currentPhotoOrderId);
+  if (!o) return;
+  if (!o.photos) o.photos = [];
+  const files = Array.from(event.target.files || []);
+  for (const file of files) {
+    try {
+      const url = await uploadPhoto(file);
+      await apiPost('/photos/order/' + o.id, { url });
+      o.photos.push(url);
+    } catch(e) { alert(t('alert.uploadFail', { e: e.message })); }
+  }
+  event.target.value = '';
+  renderModalPhotos();
+  renderTable();
+  showToast(t('toast.photoAdded', { n: files.length }));
+}
+
+async function deleteOrderPhoto(idx) {
+  const o = orders.find(x => x.id === currentPhotoOrderId);
+  if (!o || !o.photos) return;
+  if (!confirm(t('confirm.delPhoto'))) return;
+  const url = o.photos[idx];
+  try { await apiDelete('/photos/order/' + o.id, { url }); }
+  catch (e) { alert(t('alert.deleteFail', { e: e.message })); return; }
+  o.photos.splice(idx, 1);
+  renderModalPhotos();
+  renderTable();
+}
+
+function viewPhoto(src) {
+  document.getElementById('viewer-img').src = src;
+  document.getElementById('viewer-bg').classList.add('show');
+}
+function closeViewer() {
+  document.getElementById('viewer-bg').classList.remove('show');
+}
+
+// ── UI Toggles ────────────────────────────────────────
+function toggle(id, header) {
+  const body = document.getElementById(id);
+  const chevron = header.querySelector('.chevron');
+  const hidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden', !hidden);
+  chevron.classList.toggle('open', hidden);
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+
+// ── Stats ─────────────────────────────────────────────
+function renderStats() {
+  const total   = orders.reduce((a,o) => a + Number(o.total), 0);
+  const paid    = orders.reduce((a,o) => a + totalPaid(o), 0);
+  const d       = orders.reduce((a,o) => a + debt(o), 0);
+  // Frozen-rate totals: sum each order/payment at ITS OWN stored rate
+  const totalTg = orders.reduce((a,o) => a + orderTotalTg(o), 0);
+  const paidTg  = orders.reduce((a,o) => a + orderPaidTg(o),  0);
+  const dTg     = Math.max(0, totalTg - paidTg);
+  const debtCount = orders.filter(o => debt(o) > 0).length;
+
+  document.getElementById('s-count').textContent = orders.length;
+  document.getElementById('s-debt-count').textContent = t('stat.haveDebt', { n: debtCount });
+  document.getElementById('s-total').textContent = '¥ ' + fmt(total);
+  document.getElementById('s-total-tg').textContent = fmt(totalTg) + ' тг';
+  document.getElementById('s-paid').textContent = '¥ ' + fmt(paid);
+  document.getElementById('s-paid-tg').textContent = fmt(paidTg) + ' тг';
+  document.getElementById('s-debt').textContent = '¥ ' + fmt(d);
+  document.getElementById('s-debt-tg').textContent = fmt(dTg) + ' тг';
+
+  const inTransit = orders.filter(o => {
+    const s = effectiveShipStatus(o);
+    return s === 'shipped' || s === 'transit';
+  }).length;
+  const delayedCount = orders.filter(o => effectiveShipStatus(o) === 'delayed').length;
+  document.getElementById('s-transit').textContent = inTransit;
+  document.getElementById('s-transit').style.color = delayedCount > 0 ? 'var(--red)' : 'var(--yellow)';
+  if (delayedCount > 0) {
+    document.getElementById('s-transit-sub').innerHTML = t('stat.delayedSub', { n: delayedCount, t: inTransit });
+  } else {
+    document.getElementById('s-transit-sub').textContent = t('stat.transitSub', { n: inTransit });
+  }
+}
+
+// ── Table ─────────────────────────────────────────────
+function renderTable() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  let data = orders.filter(o => {
+    if (q && !((o.name||'').toLowerCase().includes(q) || (o.note||'').toLowerCase().includes(q))) return false;
+    if (activeFilter === 'debt') return debt(o) > 0;
+    if (activeFilter === 'ok') return debt(o) <= 0;
+    if (activeFilter.startsWith('ship-')) {
+      const wanted = activeFilter.replace('ship-', '');
+      return effectiveShipStatus(o) === wanted;
+    }
+    if (activeFilter === '服装') return (o.cat||'').startsWith('服装');
+    if (activeFilter !== 'all') return o.cat === activeFilter;
+    return true;
+  });
+
+  data.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  const wrap = document.getElementById('table-wrap');
+  if (!data.length) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><p>${t('table.empty')}</p></div>`;
+    return;
+  }
+
+  // Group by year-month
+  const groups = {};
+  data.forEach(o => {
+    const ym = (o.date || '').slice(0, 7); // YYYY-MM
+    (groups[ym] = groups[ym] || []).push(o);
+  });
+  const sortedKeys = Object.keys(groups).sort().reverse();
+
+  const rate = getRate();
+  wrap.innerHTML = sortedKeys.map(ym => {
+    const items = groups[ym];
+    const [y, m] = ym.split('-');
+    const totalSum = items.reduce((a, o) => a + Number(o.total), 0);
+    const debtSum = items.reduce((a, o) => a + debt(o), 0);
+    const summary = t('monthGroup.summary', { n: items.length, total: fmt(totalSum), debt: fmt(debtSum) });
+    const isOpen = expandedMonthGroups.has(ym);
+    return `<div class="month-group ${isOpen ? 'open' : ''}">
+      <div class="month-group-header" onclick="toggleMonthGroup('${ym}')">
+        <div class="month-group-title"><span class="chevron">▶</span> ${t('month.full', { y, m })}</div>
+        <div class="month-group-summary">${summary}</div>
+      </div>
+      <div class="month-group-body">${renderOrderTable(items, rate)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleMonthGroup = function (ym) {
+  if (expandedMonthGroups.has(ym)) expandedMonthGroups.delete(ym);
+  else expandedMonthGroups.add(ym);
+  renderTable();
+};
+
+function renderOrderTable(data, rate) {
+  let html = `<table>
+    <thead><tr>
+      <th>${t('tbl.idx')}</th>
+      <th>${t('tbl.date')}</th>
+      <th>${t('tbl.supplier')}</th>
+      <th>${t('tbl.category')}</th>
+      <th class="num">${t('tbl.amount')}</th>
+      <th class="num">${t('tbl.paid')}</th>
+      <th class="num">${t('tbl.debt')}</th>
+      <th class="num">${t('tbl.debtTg')}</th>
+      <th>${t('tbl.progress')}</th>
+      <th>${t('tbl.status')}</th>
+      <th>${t('tbl.ship')}</th>
+      <th>${t('tbl.photos')}</th>
+      <th>${t('tbl.note')}</th>
+      <th></th>
+    </tr></thead><tbody>`;
+
+  data.forEach((o, i) => {
+    const d = debt(o);
+    const p = pct(o);
+    const fillClass = p >= 100 ? 'full' : p < 30 ? 'low' : '';
+    const badge = d <= 0
+      ? `<span class="badge badge-green">${t('badge.clear')}</span>`
+      : p > 0
+        ? `<span class="badge badge-yellow">${t('badge.partial', {p})}</span>`
+        : `<span class="badge badge-red">${t('badge.unpaid')}</span>`;
+
+    const photoCount = (o.photos || []).length;
+    const firstPhoto = photoCount > 0 ? photoSrc(o.photos[0]) : '';
+    const photoCell = photoCount > 0
+      ? `<div class="photo-cell">
+          <img class="photo-thumb-small" src="${firstPhoto}" onclick="event.stopPropagation();viewPhoto('${firstPhoto}')" />
+          <span class="photo-count-badge" onclick="openPhotoModal(${o.id})">${t('photos.countN',{n:photoCount})}</span>
+        </div>`
+      : `<span class="photo-count-badge empty" onclick="openPhotoModal(${o.id})">${t('photos.upload')}</span>`;
+
+    const payCount = (o.allocations || []).length;
+    const paidAmount = totalPaid(o);
+    const payCell = `<div class="pay-cell">
+      <span class="pay-cell-amount">${fmt(paidAmount)}</span>
+      ${payCount > 0
+        ? `<span class="pay-cell-count" onclick="openPayModal(${o.id})">${t('pay.records',{n:payCount})}</span>`
+        : `<span class="pay-cell-count empty" onclick="openPayModal(${o.id})">${t('pay.addEmpty')}</span>`
+      }
+    </div>`;
+
+    const userShip = o.ship || 'none';
+    const currentShip = effectiveShipStatus(o);
+    const shipInfo = getShipInfo(currentShip);
+    const shipMenuItems = SHIP_STATUSES.map(s => `
+      <div class="ship-menu-item ${s.key===userShip?'active':''}" onclick="event.stopPropagation();setShipStatus(${o.id},'${s.key}');closeAllShipMenus()">
+        <span>${s.icon}</span><span>${shipLabel(s)}</span>
+      </div>
+    `).join('') + `<div class="ship-menu-divider"></div>
+      <div class="ship-menu-item" style="color:var(--blue)" onclick="event.stopPropagation();openShipModal(${o.id});closeAllShipMenus()">
+        <span>📅</span><span>${t('shipModal.editDates')}</span>
+      </div>`;
+
+    let dateInfo = '';
+    const overdueDays = currentShip === 'delayed' ? daysOverdue(o) : 0;
+    if (o.shipDate || o.etaDate || overdueDays > 0) {
+      const parts = [];
+      if (o.shipDate) parts.push(`${t('date.shipPrefix')}:${o.shipDate.slice(5)}`);
+      if (o.etaDate && currentShip !== 'arrived') parts.push(`${t('date.etaPrefix')}:${o.etaDate.slice(5)}`);
+      if (overdueDays > 0) parts.push(`<span style="color:var(--red);font-weight:700">${t('date.overdue',{n:overdueDays})}</span>`);
+      dateInfo = `<div style="font-size: 12px;color:var(--text3);margin-top:3px;line-height:1.2">${parts.join(' · ')}</div>`;
+    }
+
+    const shipCell = `<div class="ship-dropdown">
+      <span class="ship-pill ${shipInfo.cls}" onclick="cycleShipStatus(${o.id}, event)">
+        ${shipInfo.icon} ${shipLabel(shipInfo)} ▾
+      </span>
+      ${dateInfo}
+      <div class="ship-menu" id="ship-menu-${o.id}">${shipMenuItems}</div>
+    </div>`;
+
+    html += `<tr data-id="${o.id}">
+      <td style="color:var(--text3);font-size: 14px">${i+1}</td>
+      <td style="color:var(--text3);font-size: 14px;white-space:nowrap">${o.date||'-'}</td>
+      <td><div class="sup-name">${o.name}</div></td>
+      <td><span class="sup-cat">${catLabel(o.cat)}</span></td>
+      <td class="num">${fmt(o.total)}</td>
+      <td class="num">${payCell}</td>
+      <td class="num" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(d)}</td>
+      <td class="num" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(orderDebtTg(o))}</td>
+      <td style="min-width:110px">
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${p}%"></div></div>
+          <span class="progress-pct">${p}%</span>
+        </div>
+      </td>
+      <td>${badge}</td>
+      <td>${shipCell}</td>
+      <td>${photoCell}</td>
+      <td style="font-size: 14px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.note||''}">${o.note||''}</td>
+      <td>
+        <button class="btn btn-sm btn-icon" onclick="startEdit(${o.id})" title="${t('action.edit')}">✏</button>
+        <button class="btn btn-sm btn-icon btn-danger" onclick="deleteOrder(${o.id})" title="${t('action.delete')}">🗑</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+// ── Edit Row Inline ───────────────────────────────────
+function startEdit(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (!tr) return;
+  tr.classList.add('editing');
+
+  const cells = tr.children;
+  cells[1].innerHTML = `<input class="edit-input edit-input-sm" type="date" id="edit-date-${id}" value="${o.date||''}" />`;
+  cells[2].innerHTML = `<input class="edit-input" id="edit-name-${id}" value="${o.name||''}" />`;
+  const CATS = [
+    ['箱包','cat.boxes'],['服装-童装','cat.clothesKids'],['服装-成人','cat.clothesAdult'],
+    ['鞋类','cat.shoes'],['帽子','cat.hats'],['义乌杂货','cat.yiwu'],['其他','cat.other']
+  ];
+  cells[3].innerHTML = `<select class="edit-input" id="edit-cat-${id}">
+    ${CATS.map(([v,k]) => `<option value="${v}" ${v===o.cat?'selected':''}>${t(k)}</option>`).join('')}
+  </select>`;
+  cells[4].innerHTML = `<input class="edit-input" type="number" id="edit-total-${id}" value="${o.total}" style="text-align:right" />`;
+  cells[12].innerHTML = `<input class="edit-input edit-input-sm" id="edit-note-${id}" value="${o.note||''}" />`;
+  cells[13].innerHTML = `
+    <button class="btn btn-sm btn-primary btn-icon" onclick="saveEdit(${id})" title="${t('action.save')}">✓</button>
+    <button class="btn btn-sm btn-icon" onclick="renderTable()" title="${t('action.cancel')}">✕</button>
+  `;
+}
+
+async function saveEdit(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const date = document.getElementById(`edit-date-${id}`).value;
+  const name = document.getElementById(`edit-name-${id}`).value.trim();
+  const cat = document.getElementById(`edit-cat-${id}`).value;
+  const total = parseFloat(document.getElementById(`edit-total-${id}`).value) || 0;
+  const note = document.getElementById(`edit-note-${id}`).value.trim();
+
+  if (!name) { alert(t('alert.nameEmpty')); return; }
+  if (!total) { alert(t('alert.totalEmpty')); return; }
+
+  try { await apiPut('/orders/' + id, { date, name, cat, total, note }); }
+  catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+
+  o.date = date; o.name = name; o.cat = cat; o.total = total; o.note = note;
+  refresh();
+  showToast(t('toast.updated'));
+}
+
+// ── Supplier Select ───────────────────────────────────
+function updateSupplierSelect() {
+  const sel = document.getElementById('p-name');
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">${t('select.placeholder')}</option>`;
+
+  const withDebt = orders.filter(o => debt(o) > 0);
+  const clear = orders.filter(o => debt(o) <= 0);
+
+  if (withDebt.length) {
+    const g = document.createElement('optgroup');
+    g.label = t('optgroup.debt');
+    withDebt.forEach(o => {
+      const op = document.createElement('option');
+      op.value = String(o.id);
+      op.textContent = t('debt.label', { name: o.name, amount: fmt(debt(o)) });
+      g.appendChild(op);
+    });
+    sel.appendChild(g);
+  }
+
+  if (clear.length) {
+    const g = document.createElement('optgroup');
+    g.label = t('optgroup.clear');
+    clear.forEach(o => {
+      const op = document.createElement('option');
+      op.value = String(o.id);
+      op.textContent = o.name;
+      g.appendChild(op);
+    });
+    sel.appendChild(g);
+  }
+
+  if (cur) sel.value = cur;
+
+  const names = [...new Set(orders.map(o => o.name).filter(Boolean))];
+  document.getElementById('supplier-list').innerHTML = names.map(n => `<option value="${n}">`).join('');
+}
+
+// ── Add Order ─────────────────────────────────────────
+async function addOrder() {
+  const date = document.getElementById('f-date').value || new Date().toISOString().slice(0,10);
+  const name = document.getElementById('f-name').value.trim();
+  const cat = document.getElementById('f-cat').value;
+  const total = parseFloat(document.getElementById('f-total').value) || 0;
+  const paid = parseFloat(document.getElementById('f-paid').value) || 0;
+  const note = document.getElementById('f-note').value.trim();
+  const ship = document.getElementById('f-ship').value || 'ordered';
+  const shipDate = document.getElementById('f-ship-date').value;
+  const etaDate = document.getElementById('f-eta-date').value;
+
+  if (!name) { alert(t('alert.noName')); return; }
+  if (!total) { alert(t('alert.noTotal')); return; }
+  if (paid > total) { alert(t('alert.paidExceeds')); return; }
+
+  // Strict-supplier warning: existing supplier marked 'strict' with outstanding debt
+  const existingSup = suppliers.find(s => s.name === name);
+  if (existingSup && existingSup.tag === 'strict' && existingSup.owed > 0) {
+    if (!confirm(t('strict.warning', { name, debt: fmt(existingSup.owed) }))) return;
+  }
+
+  try {
+    await apiPost('/orders', {
+      supplierName: name, date, cat, total, note, ship, shipDate, etaDate,
+      initialPaid: paid, initialPayNote: t('pay.firstPayment'),
+      rate: getRate(),
+      photos: [...pendingPhotos],
+    });
+  } catch (e) { alert(t('alert.addFail', { e: e.message })); return; }
+
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-total').value = '';
+  document.getElementById('f-paid').value = '';
+  document.getElementById('f-note').value = '';
+  document.getElementById('f-ship').value = 'ordered';
+  document.getElementById('f-ship-date').value = '';
+  document.getElementById('f-eta-date').value = '';
+  document.getElementById('preview').textContent = t('hint.preview');
+  pendingPhotos = [];
+  renderPendingPhotos();
+
+  await loadData();
+  refresh();
+  showToast(t('toast.added'));
+}
+
+// ── Delete ────────────────────────────────────────────
+async function deleteOrder(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  if (!confirm(t('confirm.delOrder', { name: o.name, n: (o.photos||[]).length }))) return;
+  try { await apiDelete('/orders/' + id); }
+  catch (e) { alert(t('alert.deleteFail', { e: e.message })); return; }
+  orders = orders.filter(x => x.id !== id);
+  refresh();
+  showToast(t('toast.deleted'));
+}
+
+// ── Preview hints ─────────────────────────────────────
+function updatePreview() {
+  const t = parseFloat(document.getElementById('f-total').value) || 0;
+  const p = parseFloat(document.getElementById('f-paid').value) || 0;
+  const el = document.getElementById('preview');
+  if (!t) { el.textContent = window.t('hint.preview'); return; }
+  const d = t - p;
+  const rate = getRate();
+  el.innerHTML = window.t('hint.previewFull', { t: fmt(t), tTg: fmt(t*rate), p: fmt(p), pTg: fmt(p*rate), d: fmt(d), dTg: fmt(d*rate) });
+}
+
+function updatePayPreview() {
+  const idStr = document.getElementById('p-name').value;
+  const el = document.getElementById('pay-preview');
+  if (!idStr) { el.textContent = t('pay.preview'); return; }
+  const o = orders.find(x => x.id === parseInt(idStr));
+  if (!o) return;
+  const paid = totalPaid(o);
+  const d = debt(o);
+  const rate = getRate();
+  el.innerHTML = t('pay.previewLine', {
+    total: fmt(o.total),
+    paid: fmt(paid),
+    debt: fmt(d),
+    c: d>0?'var(--red)':'var(--text3)',
+    tg: d>0?'= '+fmt(d*rate)+' тг':'',
+    n: (o.allocations||[]).length,
+  });
+}
+
+// ── Export ────────────────────────────────────────────
+function exportCSV() {
+  if (!orders.length) { alert(t('alert.noData')); return; }
+  const rate = getRate();
+  const rows = [[
+    t('tbl.date'), t('tbl.supplier'), t('tbl.category'),
+    t('tbl.amount'), t('pay.paid')+'(¥)', t('tbl.debt'), t('tbl.debtTg'),
+    t('csv.payCount'), t('csv.payDetail'), t('tbl.status'),
+    t('tbl.ship'), t('field.shipDate'), t('field.eta'),
+    t('csv.overdueDays'), t('csv.photoCount'), t('tbl.note')
+  ]];
+  orders.forEach(o => {
+    const paid = totalPaid(o);
+    const d = debt(o);
+    const effStatus = effectiveShipStatus(o);
+    const shipInfo = getShipInfo(effStatus);
+    const overdue = effStatus === 'delayed' ? daysOverdue(o) : 0;
+    const payDetail = (o.allocations || []).map(a =>
+      `${a.paymentDate}: ¥${fmt(a.amount)}${a.paymentNote?'('+a.paymentNote+')':''}`
+    ).join(' | ');
+    rows.push([
+      o.date || '',
+      o.name, catLabel(o.cat),
+      o.total, paid, d,
+      Math.round(orderDebtTg(o)),
+      (o.allocations || []).length,
+      payDetail,
+      d <= 0 ? t('badge.clear') : pct(o) > 0 ? t('badge.partial',{p:pct(o)}) : t('badge.unpaid'),
+      shipLabel(shipInfo),
+      o.shipDate || '',
+      o.etaDate || '',
+      overdue > 0 ? overdue : '',
+      (o.photos || []).length,
+      (o.note || '').replace(/\n/g,' '),
+    ]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = t('csv.filename') + '_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.csv';
+  a.click();
+  showToast(t('toast.csv'));
+}
+
+function printPage() { window.print(); }
+
+// ── Suppliers view ────────────────────────────────────
+function tagClass(tag) { return tag === 'strict' ? 'strict' : tag === 'important' ? 'important' : 'flexible'; }
+function tagLabel(tag) { return tag === 'strict' ? t('sup.tag.strict') : tag === 'important' ? t('sup.tag.important') : t('sup.tag.flexible'); }
+
+const CAT_ORDER = ['箱包','服装-童装','服装-成人','鞋类','帽子','义乌杂货','其他'];
+
+function renderSupplierCard(s) {
+  const expanded = expandedSuppliers.has(s.id);
+  const supOrders = orders.filter(o => o.supplierId === s.id);
+  let detailHtml = '';
+  if (expanded) {
+    detailHtml = `<div class="supplier-detail show">
+      <h4>📦 ${t('sec.orderList')} (${supOrders.length})</h4>
+      ${supOrders.map(o => {
+        const dt = (o.debt || 0) > 0
+          ? `<span style="color:var(--red)">${t('badge.partial',{p:pct(o)})} · 欠¥${fmt(o.debt)}</span>`
+          : `<span style="color:var(--green)">✓ ${t('badge.clear')}</span>`;
+        return `<div class="supplier-order-row">
+          <div>
+            <strong>${o.date}</strong> · ${catLabel(o.cat)} · ¥${fmt(o.total)}
+            <div class="meta">${o.note || ''}</div>
+          </div>
+          <div style="text-align:right">${dt}</div>
+        </div>`;
+      }).join('') || `<div class="meta">—</div>`}
+      <div style="text-align:center;margin-top:10px"><button class="btn btn-sm" onclick="toggleSupplierDetail(${s.id})">${t('sup.collapse')}</button></div>
+    </div>`;
+  }
+  return `<div class="supplier-card tag-${tagClass(s.tag)} ${s.pinned?'pinned':''}">
+    <div class="supplier-head">
+      <div>
+        <div class="supplier-name">${s.pinned?'📌 ':''}${s.name}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
+          <span class="supplier-tag ${tagClass(s.tag)}" onclick="editSupplierTag(${s.id})" style="cursor:pointer">${tagLabel(s.tag)}</span>
+          <span class="supplier-tag" style="cursor:pointer;background:var(--bg);color:var(--text2);border:1px solid var(--border2)" onclick="editSupplierCategory(${s.id})">🏷 ${catLabel(s.primaryCategory)}</span>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-icon" onclick="toggleSupplierPin(${s.id})" title="${s.pinned?t('sup.unpin'):t('sup.pin')}">${s.pinned?'📌':'📍'}</button>
+    </div>
+    <div class="supplier-stats">
+      <div><div class="lbl">${t('sup.totalOrdered')}</div><div class="val">¥${fmt(s.totalOrdered)} <span style="color:var(--text3);font-size:12px">(${fmt(s.totalOrderedTg)} тг)</span></div></div>
+      <div><div class="lbl">${t('sup.totalPaid')}</div><div class="val" style="color:var(--green)">¥${fmt(s.totalPaid)} <span style="color:var(--text3);font-size:12px;font-weight:500">(${fmt(s.totalPaidTg)} тг)</span></div></div>
+      <div><div class="lbl">${t('sup.owed')}</div><div class="val debt">¥${fmt(s.owed)} <span style="color:var(--text3);font-size:12px;font-weight:500">(${fmt(Math.max(0,s.owedTg))} тг)</span></div></div>
+      <div><div class="lbl">${t('sup.balance')}</div><div class="val balance">¥${fmt(s.accountBalance)}</div></div>
+    </div>
+    <div class="supplier-actions">
+      <button class="btn btn-primary btn-sm" onclick="openAccountPayment(${s.id})">${t('sup.addPayment')}</button>
+      <button class="btn btn-sm" onclick="quickAddOrderTo(${s.id})">${t('sup.addOrder')}</button>
+      <button class="btn btn-sm" onclick="toggleSupplierDetail(${s.id})">${expanded?t('sup.collapse'):t('sup.expand')}</button>
+    </div>
+    ${detailHtml}
+  </div>`;
+}
+
+function renderSuppliers() {
+  const wrap = document.getElementById('supplier-grid');
+  if (!suppliers.length) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><p>${t('sup.empty')}</p></div>`;
+    return;
+  }
+  // Group by primary_category; known categories first (in CAT_ORDER), unknown at end
+  const groups = {};
+  suppliers.forEach(s => {
+    const k = s.primaryCategory || '其他';
+    (groups[k] = groups[k] || []).push(s);
+  });
+  const orderedKeys = [
+    ...CAT_ORDER.filter(k => groups[k]),
+    ...Object.keys(groups).filter(k => !CAT_ORDER.includes(k)),
+  ];
+  orderedKeys.forEach(k => groups[k].sort((a,b) => (b.pinned-a.pinned) || a.name.localeCompare(b.name)));
+
+  wrap.style.display = 'block';
+  wrap.innerHTML = orderedKeys.map(k => {
+    const list = groups[k];
+    const totalOwed = list.reduce((a,s) => a + s.owed, 0);
+    const totalOrdered = list.reduce((a,s) => a + s.totalOrdered, 0);
+    const isOpen = expandedCategories.has(k);
+    return `<div class="cat-group ${isOpen ? 'open' : ''}" style="margin-bottom:18px">
+      <div class="cat-head" onclick="toggleCategory('${k.replace(/'/g,"\\'")}')">
+        <span class="chev">▶</span>
+        <h3 style="font-size:20px;font-weight:700;color:var(--text);margin:0">${catLabel(k)}</h3>
+        <span class="count">${list.length}</span>
+        <span class="sum">累计 ¥${fmt(totalOrdered)} · 欠 <strong style="color:${totalOwed>0?'var(--red)':'var(--text3)'}">¥${fmt(totalOwed)}</strong></span>
+      </div>
+      <div class="cat-body" style="display:${isOpen ? 'grid' : 'none'};grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;margin-top:12px">
+        ${list.map(renderSupplierCard).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleCategory = function (k) {
+  if (expandedCategories.has(k)) expandedCategories.delete(k);
+  else expandedCategories.add(k);
+  renderSuppliers();
+};
+
+async function editSupplierCategory(id) {
+  const s = supplierById(id); if (!s) return;
+  const idx = CAT_ORDER.indexOf(s.primaryCategory);
+  const labels = CAT_ORDER.map((c, i) => `${i+1}. ${catLabel(c)}${c===s.primaryCategory?' ✓':''}`).join('\n');
+  const pick = prompt(`${t('sup.editTag')}\n\n${labels}\n\n${t('select.placeholder')} (1-${CAT_ORDER.length})`, String((idx>=0?idx:0)+1));
+  if (pick === null) return;
+  const num = parseInt(pick, 10);
+  if (!num || num < 1 || num > CAT_ORDER.length) return;
+  const newCat = CAT_ORDER[num - 1];
+  if (newCat === s.primaryCategory) return;
+  try { await apiPut('/suppliers/' + id, { primaryCategory: newCat }); }
+  catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+  s.primaryCategory = newCat;
+  renderSuppliers();
+}
+
+function toggleSupplierDetail(id) {
+  if (expandedSuppliers.has(id)) expandedSuppliers.delete(id);
+  else expandedSuppliers.add(id);
+  renderSuppliers();
+}
+
+async function toggleSupplierPin(id) {
+  const s = supplierById(id); if (!s) return;
+  try { await apiPut('/suppliers/' + id, { pinned: !s.pinned }); }
+  catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+  s.pinned = !s.pinned;
+  // Re-sort: pinned first
+  suppliers.sort((a,b) => (b.pinned-a.pinned) || a.name.localeCompare(b.name));
+  renderSuppliers();
+}
+
+async function editSupplierTag(id) {
+  const s = supplierById(id); if (!s) return;
+  const order = ['flexible','strict','important'];
+  const next = order[(order.indexOf(s.tag) + 1) % order.length];
+  const confirmKey = next === 'strict' ? 'sup.confirmTagStrict' : next === 'important' ? 'sup.confirmTagImportant' : 'sup.confirmTagFlexible';
+  if (!confirm(t(confirmKey))) return;
+  try { await apiPut('/suppliers/' + id, { tag: next }); }
+  catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }
+  s.tag = next;
+  renderSuppliers();
+}
+
+function openAccountPayment(supplierId) {
+  const s = supplierById(supplierId); if (!s) return;
+  payModalSupplierId = supplierId;
+  payModalOrderId = null;
+  pendingPayPhoto = '';
+  document.getElementById('pay-modal-title').textContent = t('pay.modalTitle', { name: s.name });
+  document.getElementById('new-pay-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('new-pay-amount').value = '';
+  document.getElementById('new-pay-note').value = '';
+  document.getElementById('new-pay-photo-preview').innerHTML = '';
+  // Force 'account' kind when opened from supplier
+  document.querySelector('input[name="paykind"][value="account"]').checked = true;
+  updatePayKindUI();
+  renderPayModalContent();
+  document.getElementById('pay-modal').classList.add('show');
+}
+
+function quickAddOrderTo(supplierId) {
+  const s = supplierById(supplierId); if (!s) return;
+  showView('orders');
+  document.getElementById('f-name').value = s.name;
+  document.getElementById('f-name').focus();
+  document.getElementById('f-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Todo view ─────────────────────────────────────────
+function renderTodo() {
+  const wrap = document.getElementById('todo-content');
+  const delayed = orders.filter(o => effectiveShipStatus(o) === 'delayed');
+  const transit = orders.filter(o => {
+    const s = effectiveShipStatus(o);
+    return s === 'shipped' || s === 'transit';
+  });
+  const strictUnpaid = orders.filter(o => {
+    if (debt(o) <= 0) return false;
+    const sup = supplierById(o.supplierId);
+    return sup && sup.tag === 'strict';
+  });
+  const bigDebt = orders.filter(o => debt(o) > 100000);
+
+  // Map each todo section to a lg-* color class for the colored left border
+  const sections = [
+    { key: 'delayed',      items: delayed,      lg: 'delayed' },
+    { key: 'strictUnpaid', items: strictUnpaid, lg: 'delayed' },
+    { key: 'bigDebt',      items: bigDebt,      lg: 'ordered' },
+    { key: 'transit',      items: transit,      lg: 'transit' },
+  ];
+
+  const totalItems = sections.reduce((a, s) => a + s.items.length, 0);
+  if (totalItems === 0) {
+    wrap.innerHTML = `<div class="empty" style="padding:40px"><div class="empty-icon">✨</div><p data-i18n="todo.empty">${t('todo.empty')}</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = sections.filter(s => s.items.length).map(sec => {
+    const isOpen = expandedTodoSections.has(sec.key);
+    const totalSum = sec.items.reduce((a, o) => a + Number(o.total), 0);
+    const debtSum  = sec.items.reduce((a, o) => a + debt(o), 0);
+    const sumText = sec.key === 'transit'
+      ? `¥${fmt(totalSum)}`
+      : `欠 ¥${fmt(debtSum)}`;
+    return `<div class="lg-group lg-${sec.lg} ${isOpen ? 'open' : ''}">
+      <div class="lg-head" onclick="toggleTodoSection('${sec.key}')">
+        <span class="chev">▶</span>
+        <div class="title">${t('todo.' + sec.key)}</div>
+        <span class="count">${sec.items.length}</span>
+        <span class="sum">${sumText}</span>
+      </div>
+      <div class="lg-body">${renderTodoTable(sec.items)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleTodoSection = function (key) {
+  if (expandedTodoSections.has(key)) expandedTodoSections.delete(key);
+  else expandedTodoSections.add(key);
+  renderTodo();
+};
+
+function renderTodoTable(items) {
+  return `<table class="lg-table">
+    <thead><tr>
+      <th>${t('tbl.date')}</th>
+      <th>${t('tbl.supplier')}</th>
+      <th class="num">${t('tbl.amount')}</th>
+      <th class="num">${t('tbl.debt')}</th>
+      <th>${t('tbl.ship')}</th>
+      <th class="act"></th>
+    </tr></thead>
+    <tbody>${items.map(o => {
+      const d = debt(o);
+      const ship = effectiveShipStatus(o);
+      const info = getShipInfo(ship);
+      return `<tr style="cursor:pointer" onclick="openPayModal(${o.id})">
+        <td class="meta">${o.date}</td>
+        <td><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
+        <td class="amt">¥${fmt(o.total)}</td>
+        <td class="amt" style="color:${d>0?'var(--red)':'var(--text3)'}">¥${fmt(d)}</td>
+        <td><span class="ship-pill ${info.cls}">${info.icon} ${shipLabel(info)}</span></td>
+        <td class="act"><button class="lg-edit" onclick="event.stopPropagation();openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ── Logistics view ────────────────────────────────────
+function renderLogistics() {
+  const wrap = document.getElementById('logistics-content');
+  if (!orders.length) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">🚛</div><p>${t('table.empty')}</p></div>`;
+    return;
+  }
+  const groups = { delayed: [], transit: [], shipped: [], ordered: [], none: [], arrived: [] };
+  orders.forEach(o => {
+    const s = effectiveShipStatus(o);
+    (groups[s] || groups.none).push(o);
+  });
+  const groupOrder = ['delayed', 'transit', 'shipped', 'ordered', 'none', 'arrived'];
+
+  wrap.innerHTML = groupOrder.filter(k => groups[k].length).map(k => {
+    const items = groups[k].slice().sort((a,b) => {
+      const ovA = daysOverdue(a), ovB = daysOverdue(b);
+      if (ovA !== ovB) return ovB - ovA;
+      return (a.etaDate || '9999-99-99').localeCompare(b.etaDate || '9999-99-99');
+    });
+    const info = getShipInfo(k);
+    const isOpen = expandedLogisticsGroups.has(k);
+    const totalSum = items.reduce((a, o) => a + Number(o.total), 0);
+    return `<div class="lg-group lg-${k} ${isOpen ? 'open' : ''}">
+      <div class="lg-head" onclick="toggleLogisticsGroup('${k}')">
+        <span class="chev">▶</span>
+        <div class="title">${info.icon} ${shipLabel(info)}</div>
+        <span class="count">${items.length}</span>
+        <span class="sum">¥${fmt(totalSum)}</span>
+      </div>
+      <div class="lg-body">${renderLogisticsTable(items)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleLogisticsGroup = function (k) {
+  if (expandedLogisticsGroups.has(k)) expandedLogisticsGroups.delete(k);
+  else expandedLogisticsGroups.add(k);
+  renderLogistics();
+};
+
+function renderLogisticsTable(items) {
+  const today = new Date().toISOString().slice(0,10);
+  return `<table class="lg-table">
+    <thead><tr>
+      <th>${t('tbl.date')}</th>
+      <th>${t('tbl.supplier')}</th>
+      <th class="num">${t('tbl.amount')}</th>
+      <th>${t('field.shipDate')}</th>
+      <th>${t('field.eta')}</th>
+      <th>${t('logistics.progress')}</th>
+      <th>${t('tbl.note')}</th>
+      <th class="act"></th>
+    </tr></thead>
+    <tbody>${items.map(o => {
+      const ov = daysOverdue(o);
+      let progress = `<span class="progress-cell">—</span>`;
+      if (ov > 0) {
+        progress = `<span class="progress-cell overdue">⚠️ ${t('date.overdue',{n:ov})}</span>`;
+      } else if (o.etaDate) {
+        const remaining = Math.ceil((new Date(o.etaDate) - new Date(today)) / 86400000);
+        if (remaining < 0) progress = `<span class="progress-cell">—</span>`;
+        else if (remaining <= 7) progress = `<span class="progress-cell soon">${t('logistics.remaining',{n:remaining})}</span>`;
+        else progress = `<span class="progress-cell far">${t('logistics.remaining',{n:remaining})}</span>`;
+      }
+      return `<tr>
+        <td class="meta">${o.date || '—'}</td>
+        <td><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
+        <td class="amt">¥${fmt(o.total)}</td>
+        <td class="meta">${o.shipDate || '—'}</td>
+        <td class="meta">${o.etaDate || '—'}</td>
+        <td>${progress}</td>
+        <td class="note-cell" title="${o.note||''}">${o.note || ''}</td>
+        <td class="act"><button class="lg-edit" onclick="openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+// ── Refresh ───────────────────────────────────────────
+function refresh() {
+  renderStats();
+  updateSupplierSelect();
+  if (activeView === 'suppliers') renderSuppliers();
+  else if (activeView === 'todo') renderTodo();
+  else if (activeView === 'logistics') renderLogistics();
+  else renderTable();
+}
+
+// ── Event listeners ───────────────────────────────────
+document.getElementById('rate').addEventListener('input', () => { refresh(); saveRate(getRate()); });
+document.getElementById('f-total').addEventListener('input', updatePreview);
+document.getElementById('f-paid').addEventListener('input', updatePreview);
+document.getElementById('p-name').addEventListener('change', updatePayPreview);
+
+document.getElementById('photo-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'photo-modal') closePhotoModal();
+});
+document.getElementById('ship-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'ship-modal') closeShipModal();
+});
+document.getElementById('pay-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'pay-modal') closePayModal();
+});
+
+// ── Init ──────────────────────────────────────────────
+window.refresh = refresh;
+(async () => {
+  await loadSettings();
+  await loadData();
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  refresh();
+  showView('orders');
+})();
+</script>
+</body>
+</html>
