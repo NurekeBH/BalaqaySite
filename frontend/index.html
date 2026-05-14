@@ -248,9 +248,10 @@
 
   /* Table */
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table { width: 100%; min-width: max-content; border-collapse: collapse; font-size: 15px; }
   th { text-align: left; font-size: 13px; font-weight: 600; color: var(--text2); padding: 8px 12px; border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
-  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+  td.wrap, .lg-table td.wrap { white-space: normal; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg); }
   .num { font-variant-numeric: tabular-nums; text-align: right; }
@@ -614,7 +615,7 @@
   .month-group-header:hover { background: var(--border); }
   .month-group-title { font-weight: 700; font-size: 16px; }
   .month-group-summary { color: var(--text2); font-size: 13px; }
-  .month-group-body { display: none; }
+  .month-group-body { display: none; overflow-x: auto; }
   .month-group.open .month-group-body { display: block; }
   .month-group .chevron { transition: transform 0.2s; }
   .month-group.open .chevron { transform: rotate(90deg); }
@@ -680,10 +681,10 @@
   .lg-group.lg-transit  .lg-head .count { background: var(--blue-light); color: var(--blue); border-color: var(--blue-border); }
   .lg-group.lg-arrived  .lg-head .count { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
   .lg-head .sum { color: var(--text3); font-size: 13px; margin-left: auto; }
-  .lg-body { display: none; border-top: 1px solid var(--border); }
+  .lg-body { display: none; border-top: 1px solid var(--border); overflow-x: auto; }
   .lg-group.open .lg-body { display: block; }
 
-  .lg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .lg-table { width: 100%; min-width: max-content; border-collapse: collapse; font-size: 14px; }
   .lg-table thead th {
     text-align: left; font-weight: 600; color: var(--text3);
     font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
