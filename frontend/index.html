@@ -361,16 +361,14 @@
     display: inline-block;
   }
   .ship-menu {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
+    position: fixed;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    z-index: 100;
+    z-index: 1000;
     padding: 4px;
-    min-width: 130px;
+    min-width: 150px;
     display: none;
   }
   .ship-menu.show { display: block; }
@@ -610,8 +608,9 @@
   .supplier-order-row .meta, .supplier-payment-row .meta { color: var(--text3); font-size: 12px; }
 
   /* Month group headers */
-  .month-group { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .month-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg); cursor: pointer; user-select: none; }
+  .month-group { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+  .month-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg); cursor: pointer; user-select: none; border-radius: var(--radius) var(--radius) 0 0; }
+  .month-group:not(.open) .month-group-header { border-radius: var(--radius); }
   .month-group-header:hover { background: var(--border); }
   .month-group-title { font-weight: 700; font-size: 16px; }
   .month-group-summary { color: var(--text2); font-size: 13px; }
@@ -1471,7 +1470,18 @@ function cycleShipStatus(orderId, event) {
   event.stopPropagation();
   closeAllShipMenus();
   const menu = document.getElementById('ship-menu-' + orderId);
-  if (menu) menu.classList.add('show');
+  if (!menu) return;
+  // Position relative to viewport (escapes any overflow:hidden parent)
+  const rect = event.currentTarget.getBoundingClientRect();
+  // First show with auto height, then measure to flip above if it would overflow viewport
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = rect.left + 'px';
+  menu.classList.add('show');
+  // If overflowing the bottom of the viewport, flip up
+  const menuRect = menu.getBoundingClientRect();
+  if (menuRect.bottom > window.innerHeight - 8) {
+    menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+  }
 }
 
 function closeAllShipMenus() {
@@ -1479,8 +1489,10 @@ function closeAllShipMenus() {
 }
 
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.ship-dropdown')) closeAllShipMenus();
+  if (!e.target.closest('.ship-dropdown') && !e.target.closest('.ship-menu')) closeAllShipMenus();
 });
+// Close menu on scroll — its fixed position would otherwise stay anchored to viewport while page moves
+window.addEventListener('scroll', closeAllShipMenus, true);
 
 // ── Payment Records Modal ─────────────────────────────
 let payModalOrderId = null;
