@@ -1354,6 +1354,7 @@ let expandedLogisticsGroups = new Set(); // empty = all collapsed by default
 let expandedMonthGroups = new Set();  // empty = all collapsed by default
 
 function supplierById(id) { return suppliers.find(s => s.id === id); }
+function isAdmin() { return currentAuthUser && currentAuthUser.role === 'admin'; }
 
 async function loadData() {
   try {
@@ -1950,21 +1951,27 @@ function renderOrderTable(data, rate) {
 
     const photoCount = (o.photos || []).length;
     const firstPhoto = photoCount > 0 ? photoSrc(o.photos[0]) : '';
-    const photoCell = photoCount > 0
-      ? `<div class="photo-cell">
-          <img class="photo-thumb-small" src="${firstPhoto}" onclick="event.stopPropagation();viewPhoto('${firstPhoto}')" />
-          <span class="photo-count-badge" onclick="openPhotoModal(${o.id})">${t('photos.countN',{n:photoCount})}</span>
-        </div>`
-      : `<span class="photo-count-badge empty" onclick="openPhotoModal(${o.id})">${t('photos.upload')}</span>`;
+    let photoCell = '';
+    if (photoCount > 0) {
+      photoCell = `<div class="photo-cell">
+        <img class="photo-thumb-small" src="${firstPhoto}" onclick="event.stopPropagation();viewPhoto('${firstPhoto}')" />
+        <span class="photo-count-badge" onclick="openPhotoModal(${o.id})">${t('photos.countN',{n:photoCount})}</span>
+      </div>`;
+    } else if (isAdmin()) {
+      photoCell = `<span class="photo-count-badge empty" onclick="openPhotoModal(${o.id})">${t('photos.upload')}</span>`;
+    }
 
     const payCount = (o.allocations || []).length;
     const paidAmount = totalPaid(o);
+    let payInner = '';
+    if (payCount > 0) {
+      payInner = `<span class="pay-cell-count" onclick="openPayModal(${o.id})">${t('pay.records',{n:payCount})}</span>`;
+    } else if (isAdmin()) {
+      payInner = `<span class="pay-cell-count empty" onclick="openPayModal(${o.id})">${t('pay.addEmpty')}</span>`;
+    }
     const payCell = `<div class="pay-cell">
       <span class="pay-cell-amount">${fmt(paidAmount)}</span>
-      ${payCount > 0
-        ? `<span class="pay-cell-count" onclick="openPayModal(${o.id})">${t('pay.records',{n:payCount})}</span>`
-        : `<span class="pay-cell-count empty" onclick="openPayModal(${o.id})">${t('pay.addEmpty')}</span>`
-      }
+      ${payInner}
     </div>`;
 
     const userShip = o.ship || 'none';
@@ -1989,13 +1996,18 @@ function renderOrderTable(data, rate) {
       dateInfo = `<div style="font-size: 12px;color:var(--text3);margin-top:3px;line-height:1.2">${parts.join(' · ')}</div>`;
     }
 
-    const shipCell = `<div class="ship-dropdown">
-      <span class="ship-pill ${shipInfo.cls}" onclick="cycleShipStatus(${o.id}, event)">
-        ${shipInfo.icon} ${shipLabel(shipInfo)} ▾
-      </span>
-      ${dateInfo}
-      <div class="ship-menu" id="ship-menu-${o.id}">${shipMenuItems}</div>
-    </div>`;
+    const shipCell = isAdmin()
+      ? `<div class="ship-dropdown">
+          <span class="ship-pill ${shipInfo.cls}" onclick="cycleShipStatus(${o.id}, event)">
+            ${shipInfo.icon} ${shipLabel(shipInfo)} ▾
+          </span>
+          ${dateInfo}
+          <div class="ship-menu" id="ship-menu-${o.id}">${shipMenuItems}</div>
+        </div>`
+      : `<div>
+          <span class="ship-pill ${shipInfo.cls}" style="cursor:default">${shipInfo.icon} ${shipLabel(shipInfo)}</span>
+          ${dateInfo}
+        </div>`;
 
     html += `<tr data-id="${o.id}">
       <td style="color:var(--text3);font-size: 14px">${i+1}</td>
@@ -2282,8 +2294,12 @@ function renderSupplierCard(s) {
       <div>
         <div class="supplier-name">${s.pinned?'📌 ':''}${s.name}</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
-          <span class="supplier-tag ${tagClass(s.tag)}" onclick="editSupplierTag(${s.id})" style="cursor:pointer">${tagLabel(s.tag)}</span>
-          <span class="supplier-tag" style="cursor:pointer;background:var(--bg);color:var(--text2);border:1px solid var(--border2)" onclick="editSupplierCategory(${s.id})">🏷 ${catLabel(s.primaryCategory)}</span>
+          ${isAdmin()
+            ? `<span class="supplier-tag ${tagClass(s.tag)}" onclick="editSupplierTag(${s.id})" style="cursor:pointer">${tagLabel(s.tag)}</span>
+               <span class="supplier-tag" style="cursor:pointer;background:var(--bg);color:var(--text2);border:1px solid var(--border2)" onclick="editSupplierCategory(${s.id})">🏷 ${catLabel(s.primaryCategory)}</span>`
+            : `<span class="supplier-tag ${tagClass(s.tag)}">${tagLabel(s.tag)}</span>
+               <span class="supplier-tag" style="background:var(--bg);color:var(--text2);border:1px solid var(--border2)">🏷 ${catLabel(s.primaryCategory)}</span>`
+          }
         </div>
       </div>
       <button class="btn btn-sm btn-icon admin-only" onclick="toggleSupplierPin(${s.id})" title="${s.pinned?t('sup.unpin'):t('sup.pin')}">${s.pinned?'📌':'📍'}</button>
