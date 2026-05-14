@@ -573,6 +573,117 @@
     .form-grid3 { grid-template-columns: 1fr; }
   }
 
+  /* ════════ Mobile (≤640px) ════════ */
+  @media (max-width: 640px) {
+    body { font-size: 15px; }
+
+    /* Header: wrap, smaller paddings, smaller buttons */
+    .header { height: auto; padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+    .header h1 { font-size: 15px; }
+    .header-left { gap: 8px; }
+    .logo { width: 28px; height: 28px; font-size: 14px; }
+    .header-right { gap: 6px; flex-wrap: wrap; }
+    .header-right .btn { padding: 6px 8px; font-size: 13px; }
+    .rate-box { padding: 4px 8px; font-size: 12px; }
+    .rate-box input { width: 50px; font-size: 12px; }
+    #lang-select { font-size: 12px; height: 28px; padding: 0 4px; }
+    .user-chip { font-size: 12px; padding: 3px 8px; }
+
+    /* View tabs: tighter */
+    .view-tab { padding: 10px 6px; font-size: 13px; font-weight: 600; }
+
+    /* Stats: single column on small phones */
+    .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+    .stat-card { padding: 10px 12px; }
+    .stat-value { font-size: 19px; }
+    .stat-label { font-size: 11px; }
+    .stat-sub { font-size: 10px; }
+
+    .main { padding: 12px 8px; }
+    .section-body { padding: 12px; }
+    .section-header { padding: 10px 12px; }
+    .section-title { font-size: 14px; }
+
+    /* Filters: wrap nicely */
+    .filters { gap: 6px; }
+    .filter-tab { padding: 6px 10px; font-size: 13px; }
+
+    /* Supplier cards: 1 col, internal stats also 1 col */
+    .supplier-grid { grid-template-columns: 1fr !important; }
+    .cat-head { flex-wrap: wrap; padding: 8px 4px; }
+    .cat-head h3 { font-size: 17px; }
+    .cat-head .sum { margin-left: 0; font-size: 12px; width: 100%; }
+    .supplier-stats { grid-template-columns: 1fr; gap: 6px 0; }
+    .supplier-actions .btn { min-width: 0; }
+
+    /* Modals: nearly full-screen */
+    .modal { max-width: calc(100vw - 16px) !important; max-height: calc(100vh - 16px); margin: 8px; }
+    .modal-body { padding: 12px; }
+
+    /* Login card */
+    .login-card { padding: 22px; }
+
+    /* ── Tables become cards ── */
+    .table-wrap, .month-group-body, .lg-body { overflow-x: visible !important; }
+    table, .lg-table {
+      min-width: 0 !important;
+      width: 100% !important;
+      display: block;
+    }
+    table thead, .lg-table thead { display: none; }
+    table tbody, .lg-table tbody { display: block; }
+    table tr, .lg-table tr {
+      display: block;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 10px 12px;
+      margin: 8px 0;
+      box-shadow: var(--shadow);
+    }
+    table tbody tr:hover, .lg-table tbody tr:hover { background: var(--surface); }
+    table td, .lg-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border: none !important;
+      text-align: right !important;
+      white-space: normal;
+      min-width: 0;
+    }
+    table td::before, .lg-table td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--text3);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+    table td.no-label::before, .lg-table td.no-label::before { content: ''; }
+    /* Hide noisy columns on phone */
+    table td.hide-mobile, .lg-table td.hide-mobile { display: none; }
+    /* Supplier+cat cell: name is the "header" of the card */
+    table td.mobile-title, .lg-table td.mobile-title {
+      display: block;
+      text-align: left !important;
+      padding-bottom: 8px;
+      margin-bottom: 6px;
+      border-bottom: 1px dashed var(--border) !important;
+    }
+    table td.mobile-title::before, .lg-table td.mobile-title::before { display: none; }
+    table td.mobile-title .sup, .lg-table td.mobile-title .sup,
+    table td.mobile-title .sup-name { font-size: 16px; font-weight: 700; }
+
+    /* Photo + actions stay compact */
+    .progress-wrap { flex: 1; }
+
+    /* Ship dropdown menu: full-width on phone */
+    .ship-menu { left: 8px !important; right: 8px !important; width: auto !important; }
+  }
+
   /* Top tab bar */
   .view-tabs { display: flex; gap: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
   .view-tab { flex: 1; padding: 14px 18px; background: transparent; border: none; cursor: pointer; font-family: inherit; font-size: 17px; font-weight: 600; color: var(--text2); transition: all 0.15s; border-bottom: 3px solid transparent; }
@@ -2023,25 +2134,25 @@ function renderOrderTable(data, rate) {
         </div>`;
 
     html += `<tr data-id="${o.id}">
-      <td style="color:var(--text3);font-size: 14px">${i+1}</td>
-      <td style="color:var(--text3);font-size: 14px;white-space:nowrap">${o.date||'-'}</td>
-      <td><div class="sup-name">${o.name}</div></td>
-      <td><span class="sup-cat">${catLabel(o.cat)}</span></td>
-      <td class="num">${fmt(o.total)}</td>
-      <td class="num">${payCell}</td>
-      <td class="num" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(d)}</td>
-      <td class="num" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(orderDebtTg(o))}</td>
-      <td style="min-width:110px">
+      <td class="hide-mobile" style="color:var(--text3);font-size: 14px">${i+1}</td>
+      <td data-label="${t('tbl.date')}" style="color:var(--text3);font-size: 14px;white-space:nowrap">${o.date||'-'}</td>
+      <td class="mobile-title" data-label="${t('tbl.supplier')}"><div class="sup-name">${o.name}</div><span class="sup-cat" style="color:var(--text3);font-size:12px">${catLabel(o.cat)}</span></td>
+      <td data-label="${t('tbl.category')}" class="hide-mobile"><span class="sup-cat">${catLabel(o.cat)}</span></td>
+      <td class="num" data-label="${t('tbl.amount')}">${fmt(o.total)}</td>
+      <td class="num" data-label="${t('tbl.paid')}">${payCell}</td>
+      <td class="num" data-label="${t('tbl.debt')}" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(d)}</td>
+      <td class="num hide-mobile" data-label="${t('tbl.debtTg')}" style="color:${d>0?'var(--red)':'var(--text3)'}">${fmt(orderDebtTg(o))}</td>
+      <td data-label="${t('tbl.progress')}" class="hide-mobile" style="min-width:110px">
         <div class="progress-wrap">
           <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${p}%"></div></div>
           <span class="progress-pct">${p}%</span>
         </div>
       </td>
-      <td>${badge}</td>
-      <td>${shipCell}</td>
-      <td>${photoCell}</td>
-      <td style="font-size: 14px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.note||''}">${o.note||''}</td>
-      <td class="admin-only">
+      <td data-label="${t('tbl.status')}">${badge}</td>
+      <td data-label="${t('tbl.ship')}">${shipCell}</td>
+      <td data-label="${t('tbl.photos')}">${photoCell}</td>
+      <td data-label="${t('tbl.note')}" style="font-size: 14px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.note||''}">${o.note||''}</td>
+      <td class="admin-only no-label">
         <button class="btn btn-sm btn-icon" onclick="startEdit(${o.id})" title="${t('action.edit')}">✏</button>
         <button class="btn btn-sm btn-icon btn-danger" onclick="deleteOrder(${o.id})" title="${t('action.delete')}">🗑</button>
       </td>
@@ -2514,12 +2625,12 @@ function renderTodoTable(items) {
       const ship = effectiveShipStatus(o);
       const info = getShipInfo(ship);
       return `<tr style="cursor:pointer" onclick="openPayModal(${o.id})">
-        <td class="meta">${o.date}</td>
-        <td><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
-        <td class="amt">¥${fmt(o.total)}</td>
-        <td class="amt" style="color:${d>0?'var(--red)':'var(--text3)'}">¥${fmt(d)}</td>
-        <td><span class="ship-pill ${info.cls}">${info.icon} ${shipLabel(info)}</span></td>
-        <td class="act"><button class="lg-edit" onclick="event.stopPropagation();openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
+        <td class="meta" data-label="${t('tbl.date')}">${o.date}</td>
+        <td class="mobile-title" data-label="${t('tbl.supplier')}"><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
+        <td class="amt" data-label="${t('tbl.amount')}">¥${fmt(o.total)}</td>
+        <td class="amt" data-label="${t('tbl.debt')}" style="color:${d>0?'var(--red)':'var(--text3)'}">¥${fmt(d)}</td>
+        <td data-label="${t('tbl.ship')}"><span class="ship-pill ${info.cls}">${info.icon} ${shipLabel(info)}</span></td>
+        <td class="act no-label admin-only"><button class="lg-edit" onclick="event.stopPropagation();openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -2591,14 +2702,14 @@ function renderLogisticsTable(items) {
         else progress = `<span class="progress-cell far">${t('logistics.remaining',{n:remaining})}</span>`;
       }
       return `<tr>
-        <td class="meta">${o.date || '—'}</td>
-        <td><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
-        <td class="amt">¥${fmt(o.total)}</td>
-        <td class="meta">${o.shipDate || '—'}</td>
-        <td class="meta">${o.etaDate || '—'}</td>
-        <td>${progress}</td>
-        <td class="note-cell" title="${o.note||''}">${o.note || ''}</td>
-        <td class="act admin-only"><button class="lg-edit" onclick="openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
+        <td class="meta" data-label="${t('tbl.date')}">${o.date || '—'}</td>
+        <td class="mobile-title" data-label="${t('tbl.supplier')}"><div class="sup">${o.name}</div><div class="cat">${catLabel(o.cat)}</div></td>
+        <td class="amt" data-label="${t('tbl.amount')}">¥${fmt(o.total)}</td>
+        <td class="meta" data-label="${t('field.shipDate')}">${o.shipDate || '—'}</td>
+        <td class="meta" data-label="${t('field.eta')}">${o.etaDate || '—'}</td>
+        <td data-label="${t('logistics.progress')}">${progress}</td>
+        <td class="note-cell" data-label="${t('tbl.note')}" title="${o.note||''}">${o.note || ''}</td>
+        <td class="act admin-only no-label"><button class="lg-edit" onclick="openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
