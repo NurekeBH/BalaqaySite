@@ -81,4 +81,18 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT IGNORE INTO settings (k, v) VALUES ('rate', '65.5');
 
+-- Users (login/role). Default admin: username 'admin', password 'admin123'
+-- ⚠️ Change this password from the UI (👥 button) immediately after first login.
+CREATE TABLE IF NOT EXISTS users (
+  id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username      VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role          ENUM('admin','user') NOT NULL DEFAULT 'user',
+  display_name  VARCHAR(200) DEFAULT '',
+  created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO users (username, password_hash, role, display_name)
+VALUES ('admin', '$2y$10$NWbg3pVi2ynJaN54tGj1IeIVtLyrC83GJi8jrvBOL7La/2TUkuSNW', 'admin', 'Administrator');
+
 SET FOREIGN_KEY_CHECKS = 1;

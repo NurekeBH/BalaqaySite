@@ -711,10 +711,68 @@
   .lg-table .act { width: 1%; white-space: nowrap; }
   .lg-edit { background: transparent; border: 1px solid var(--border2); border-radius: 6px; padding: 6px 8px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--text2); }
   .lg-edit:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+
+  /* ── Auth: login overlay + read-only mode ── */
+  .login-bg {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85);
+    z-index: 10000; display: flex; align-items: center; justify-content: center;
+  }
+  .login-card {
+    background: var(--surface); border-radius: 12px; padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 360px;
+  }
+  .login-card h2 { font-size: 22px; margin-bottom: 6px; }
+  .login-card .sub { color: var(--text2); font-size: 14px; margin-bottom: 22px; }
+  .login-card .field { margin-bottom: 14px; }
+  .login-card label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  .login-card input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--border2); border-radius: 8px; font-size: 16px; font-family: inherit; outline: none; }
+  .login-card input:focus { border-color: var(--blue); }
+  .login-card .err { color: var(--red); font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .login-card .btn-login { width: 100%; height: 44px; font-size: 16px; font-weight: 600; margin-top: 4px; }
+
+  /* Read-only mode for `user` role: hide every element marked admin-only */
+  body.readonly .admin-only { display: none !important; }
+
+  /* Header user chip + logout */
+  .user-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 16px; font-size: 13px; color: var(--text2);
+  }
+  .user-chip .role { font-weight: 700; color: var(--blue); }
+  .user-chip .role.user-role { color: var(--text3); }
+
+  /* User management modal */
+  .users-grid { width: 100%; border-collapse: collapse; }
+  .users-grid th { text-align: left; padding: 10px 12px; color: var(--text3); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .users-grid td { padding: 12px; border-bottom: 1px solid var(--border); }
+  .role-pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .role-pill.admin { background: var(--blue-light); color: var(--blue); border: 1px solid var(--blue-border); }
+  .role-pill.user { background: var(--bg); color: var(--text2); border: 1px solid var(--border2); }
 </style>
 <script src="i18n.js"></script>
 </head>
 <body>
+
+<!-- ═══════ Login overlay (shown until authenticated) ═══════ -->
+<div class="login-bg" id="login-overlay" style="display:none">
+  <div class="login-card">
+    <h2 data-i18n="login.title">🔐 Кіру</h2>
+    <div class="sub" data-i18n="login.sub">Жалғастыру үшін кіріңіз</div>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="field">
+        <label data-i18n="login.username">Пайдаланушы</label>
+        <input id="login-username" autocomplete="username" required autofocus />
+      </div>
+      <div class="field">
+        <label data-i18n="login.password">Құпиясөз</label>
+        <input id="login-password" type="password" autocomplete="current-password" required />
+      </div>
+      <div class="err" id="login-err"></div>
+      <button class="btn btn-primary btn-login" type="submit" data-i18n="login.submit">Кіру</button>
+    </form>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-left">
@@ -734,6 +792,11 @@
     </div>
     <button class="btn" data-i18n="btn.export" onclick="exportCSV()">⬇ 导出CSV</button>
     <button class="btn" data-i18n="btn.print" onclick="printPage()">🖨 打印</button>
+    <button class="btn admin-only" data-i18n="btn.users" onclick="openUsersModal()">👥 用户</button>
+    <div class="user-chip" id="user-chip" style="display:none">
+      <span id="uc-name"></span> · <span class="role" id="uc-role"></span>
+      <button class="btn btn-sm btn-icon" onclick="doLogout()" title="Logout" style="margin-left:4px">⎋</button>
+    </div>
   </div>
 </div>
 
@@ -792,7 +855,7 @@
   <div class="view-pane" id="view-orders">
 
   <!-- Add Order -->
-  <div class="section">
+  <div class="section admin-only">
     <div class="section-header" onclick="toggle('add-body', this)">
       <div class="section-title"><span class="section-icon">➕</span> <span data-i18n="sec.addOrder">添加新订单</span></div>
       <span class="chevron open">▶</span>
@@ -856,7 +919,7 @@
   </div>
 
   <!-- Record Payment -->
-  <div class="section">
+  <div class="section admin-only">
     <div class="section-header" onclick="toggle('pay-body', this)">
       <div class="section-title"><span class="section-icon">💸</span> <span data-i18n="sec.recordPayment">记录付款</span></div>
       <span class="chevron open">▶</span>
@@ -938,7 +1001,7 @@
       <button class="modal-close" onclick="closePhotoModal()">✕</button>
     </div>
     <div class="modal-body">
-      <label class="modal-upload-zone" for="modal-photo-input">
+      <label class="modal-upload-zone admin-only" for="modal-photo-input">
         <div style="font-size: 30px;margin-bottom:6px">📷</div>
         <div style="font-weight:500" data-i18n="photos.uploadHint">点击上传清单照片</div>
         <div style="font-size: 14px;margin-top:4px" data-i18n="photos.multiHint">支持多张 · 自动压缩</div>
@@ -960,7 +1023,7 @@
       <div id="pay-modal-summary" style="background:var(--bg);padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:14px;font-size: 15px;color:var(--text2)"></div>
 
       <!-- Add new payment form -->
-      <div style="border:1px dashed var(--blue);background:var(--blue-light);padding:14px;border-radius:var(--radius-sm);margin-bottom:14px">
+      <div class="admin-only" style="border:1px dashed var(--blue);background:var(--blue-light);padding:14px;border-radius:var(--radius-sm);margin-bottom:14px">
         <div style="font-size: 14px;color:var(--blue);font-weight:600;margin-bottom:10px" data-i18n="pay.addNew">＋ 添加新付款</div>
 
         <!-- Payment kind radios -->
@@ -1050,6 +1113,44 @@
   </div>
 </div>
 
+<!-- Users management modal (admin only) -->
+<div class="modal-bg" id="users-modal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title">👥 <span data-i18n="users.title">Пайдаланушылар</span></div>
+      <button class="modal-close" onclick="closeUsersModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-light);border:1px dashed var(--blue);padding:14px;border-radius:8px;margin-bottom:14px">
+        <div style="font-weight:600;color:var(--blue);margin-bottom:10px" data-i18n="users.add">+ Жаңа пайдаланушы</div>
+        <form onsubmit="addUser(event)" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
+          <div class="field">
+            <label data-i18n="users.username" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Username</label>
+            <input id="nu-username" required style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit" />
+          </div>
+          <div class="field">
+            <label data-i18n="users.password" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Password</label>
+            <input id="nu-password" type="password" required minlength="6" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit" />
+          </div>
+          <div class="field">
+            <label data-i18n="users.displayName" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Аты</label>
+            <input id="nu-display" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit" />
+          </div>
+          <div class="field">
+            <label data-i18n="users.role" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Role</label>
+            <select id="nu-role" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit">
+              <option value="user" data-i18n="users.roleUser">User (тек оқу)</option>
+              <option value="admin" data-i18n="users.roleAdmin">Admin (бәрі)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit" data-i18n="users.create">Қосу</button>
+        </form>
+      </div>
+      <div id="users-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Photo viewer -->
 <div class="viewer-bg" id="viewer-bg" onclick="closeViewer()">
   <button class="viewer-close" onclick="closeViewer()">✕</button>
@@ -1060,11 +1161,21 @@
 
 <script>
 // ── API client ────────────────────────────────────────
-const API = (location.origin.startsWith('http') ? '' : 'http://localhost:3001') + '/api';
+const API = (location.origin.startsWith('http') ? '' : 'http://localhost:8080') + '/api';
 
-async function apiGet(p)            { const r = await fetch(API+p); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+async function apiGet(p)            {
+  const r = await fetch(API+p, { credentials: 'include' });
+  if (r.status === 401) { showLogin(); throw new Error('not authenticated'); }
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
 async function apiSend(method, p, body) {
-  const r = await fetch(API+p, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const r = await fetch(API+p, {
+    method, credentials: 'include',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (r.status === 401) { showLogin(); throw new Error('not authenticated'); }
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
@@ -1076,7 +1187,8 @@ async function uploadPhoto(file) {
   const blob = await compressImageToBlob(file);
   const fd = new FormData();
   fd.append('photo', blob, 'photo.jpg');
-  const r = await fetch(API + '/photos/upload', { method: 'POST', body: fd });
+  const r = await fetch(API + '/photos/upload', { method: 'POST', credentials: 'include', body: fd });
+  if (r.status === 401) { showLogin(); throw new Error('not authenticated'); }
   if (!r.ok) throw new Error(await r.text());
   const { url } = await r.json();
   return url;
@@ -1085,9 +1197,148 @@ async function uploadPhoto(file) {
 function photoSrc(p) {
   if (!p) return '';
   if (p.startsWith('data:') || p.startsWith('http')) return p;
-  // url like /uploads/xxx.jpg — prefix with backend origin when served from file://
-  return (location.origin.startsWith('http') ? '' : 'http://localhost:3001') + p;
+  return (location.origin.startsWith('http') ? '' : 'http://localhost:8080') + p;
 }
+
+// ── Auth state ────────────────────────────────────────
+let currentAuthUser = null;
+
+function showLogin() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('user-chip').style.display = 'none';
+}
+function hideLogin() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+
+async function checkAuth() {
+  try {
+    const r = await fetch(API + '/auth/me', { credentials: 'include' });
+    if (!r.ok) { showLogin(); return false; }
+    const j = await r.json();
+    if (!j.authenticated) { showLogin(); return false; }
+    currentAuthUser = j.user;
+    applyAuthUI();
+    hideLogin();
+    return true;
+  } catch (e) { showLogin(); return false; }
+}
+
+function applyAuthUI() {
+  if (!currentAuthUser) return;
+  document.getElementById('uc-name').textContent = currentAuthUser.display_name || currentAuthUser.username;
+  const roleEl = document.getElementById('uc-role');
+  roleEl.textContent = currentAuthUser.role === 'admin' ? 'admin' : 'user';
+  roleEl.className = 'role' + (currentAuthUser.role === 'user' ? ' user-role' : '');
+  document.getElementById('user-chip').style.display = 'flex';
+  document.body.classList.toggle('readonly', currentAuthUser.role !== 'admin');
+}
+
+window.doLogin = async function (e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  try {
+    const r = await fetch(API + '/auth/login', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      errEl.textContent = j.error || 'Login failed';
+      return;
+    }
+    const j = await r.json();
+    currentAuthUser = j.user;
+    applyAuthUI();
+    hideLogin();
+    document.getElementById('login-password').value = '';
+    await loadSettings();
+    await loadData();
+    refresh();
+  } catch (e) { errEl.textContent = e.message; }
+};
+
+window.doLogout = async function () {
+  await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+  currentAuthUser = null;
+  document.body.classList.remove('readonly');
+  location.reload();
+};
+
+// ── User management ──────────────────────────────────────
+window.openUsersModal = async function () {
+  document.getElementById('users-modal').classList.add('show');
+  await renderUsersList();
+};
+window.closeUsersModal = function () {
+  document.getElementById('users-modal').classList.remove('show');
+};
+
+async function renderUsersList() {
+  const wrap = document.getElementById('users-list');
+  try {
+    const users = await apiGet('/users');
+    wrap.innerHTML = `<table class="users-grid"><thead><tr>
+      <th>ID</th><th>Username</th><th>Аты</th><th>Role</th><th>Создан</th><th></th>
+    </tr></thead><tbody>${users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.displayName || ''}</td>
+        <td><span class="role-pill ${u.role}">${u.role}</span></td>
+        <td style="color:var(--text3);font-size:13px">${u.createdAt || ''}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn btn-sm" onclick="changeUserPassword(${u.id})" title="Пароль">🔑</button>
+          <button class="btn btn-sm" onclick="toggleUserRole(${u.id}, '${u.role}')" title="Role">⇆</button>
+          <button class="btn btn-sm btn-icon btn-danger" onclick="deleteUser(${u.id}, '${u.username.replace(/'/g,"\\'")}')" title="Өшіру">🗑</button>
+        </td>
+      </tr>
+    `).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<div style="color:var(--red)">${e.message}</div>`;
+  }
+}
+
+window.addUser = async function (e) {
+  e.preventDefault();
+  const username = document.getElementById('nu-username').value.trim();
+  const password = document.getElementById('nu-password').value;
+  const displayName = document.getElementById('nu-display').value.trim();
+  const role = document.getElementById('nu-role').value;
+  try {
+    await apiSend('POST', '/users', { username, password, displayName, role });
+    document.getElementById('nu-username').value = '';
+    document.getElementById('nu-password').value = '';
+    document.getElementById('nu-display').value = '';
+    document.getElementById('nu-role').value = 'user';
+    await renderUsersList();
+    showToast('✓ Қосылды');
+  } catch (e) { alert(e.message); }
+};
+
+window.changeUserPassword = async function (id) {
+  const np = prompt('Жаңа құпиясөз (мин. 6 таңба):');
+  if (!np) return;
+  try { await apiSend('PUT', '/users/' + id, { password: np }); showToast('✓ Жаңартылды'); }
+  catch (e) { alert(e.message); }
+};
+
+window.toggleUserRole = async function (id, currentRole) {
+  const newRole = currentRole === 'admin' ? 'user' : 'admin';
+  if (!confirm(`Role: ${currentRole} → ${newRole}?`)) return;
+  try { await apiSend('PUT', '/users/' + id, { role: newRole }); await renderUsersList(); showToast('✓ Жаңартылды'); }
+  catch (e) { alert(e.message); }
+};
+
+window.deleteUser = async function (id, name) {
+  if (!confirm(`«${name}» пайдаланушысын өшіру?`)) return;
+  try { await apiSend('DELETE', '/users/' + id, {}); await renderUsersList(); showToast('✓ Өшірілді'); }
+  catch (e) { alert(e.message); }
+};
 
 // ── Data ──────────────────────────────────────────────
 let orders = [];
@@ -1307,7 +1558,7 @@ function renderPayModalContent() {
           ${a.paymentNote ? `<div class="pay-record-note">${a.paymentNote}</div>` : ''}
           ${rateLine}
         </div>
-        <div class="pay-record-actions">
+        <div class="pay-record-actions admin-only">
           <button class="btn btn-sm btn-icon btn-danger" onclick="deletePaymentBehindAlloc(${a.paymentId})" title="${t('action.delete')}">🗑</button>
         </div>
       </div>`;
@@ -1519,7 +1770,7 @@ function renderModalPhotos() {
     const ps = photoSrc(src);
     return `<div class="modal-photo">
       <img src="${ps}" onclick="viewPhoto('${ps}')" />
-      <button class="modal-photo-del" onclick="deleteOrderPhoto(${i})">✕</button>
+      <button class="modal-photo-del admin-only" onclick="deleteOrderPhoto(${i})">✕</button>
     </div>`;
   }).join('');
 }
@@ -1765,7 +2016,7 @@ function renderOrderTable(data, rate) {
       <td>${shipCell}</td>
       <td>${photoCell}</td>
       <td style="font-size: 14px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.note||''}">${o.note||''}</td>
-      <td>
+      <td class="admin-only">
         <button class="btn btn-sm btn-icon" onclick="startEdit(${o.id})" title="${t('action.edit')}">✏</button>
         <button class="btn btn-sm btn-icon btn-danger" onclick="deleteOrder(${o.id})" title="${t('action.delete')}">🗑</button>
       </td>
@@ -2035,7 +2286,7 @@ function renderSupplierCard(s) {
           <span class="supplier-tag" style="cursor:pointer;background:var(--bg);color:var(--text2);border:1px solid var(--border2)" onclick="editSupplierCategory(${s.id})">🏷 ${catLabel(s.primaryCategory)}</span>
         </div>
       </div>
-      <button class="btn btn-sm btn-icon" onclick="toggleSupplierPin(${s.id})" title="${s.pinned?t('sup.unpin'):t('sup.pin')}">${s.pinned?'📌':'📍'}</button>
+      <button class="btn btn-sm btn-icon admin-only" onclick="toggleSupplierPin(${s.id})" title="${s.pinned?t('sup.unpin'):t('sup.pin')}">${s.pinned?'📌':'📍'}</button>
     </div>
     <div class="supplier-stats">
       <div><div class="lbl">${t('sup.totalOrdered')}</div><div class="val">¥${fmt(s.totalOrdered)} <span style="color:var(--text3);font-size:12px">(${fmt(s.totalOrderedTg)} тг)</span></div></div>
@@ -2044,8 +2295,8 @@ function renderSupplierCard(s) {
       <div><div class="lbl">${t('sup.balance')}</div><div class="val balance">¥${fmt(s.accountBalance)}</div></div>
     </div>
     <div class="supplier-actions">
-      <button class="btn btn-primary btn-sm" onclick="openAccountPayment(${s.id})">${t('sup.addPayment')}</button>
-      <button class="btn btn-sm" onclick="quickAddOrderTo(${s.id})">${t('sup.addOrder')}</button>
+      <button class="btn btn-primary btn-sm admin-only" onclick="openAccountPayment(${s.id})">${t('sup.addPayment')}</button>
+      <button class="btn btn-sm admin-only" onclick="quickAddOrderTo(${s.id})">${t('sup.addOrder')}</button>
       <button class="btn btn-sm" onclick="toggleSupplierDetail(${s.id})">${expanded?t('sup.collapse'):t('sup.expand')}</button>
     </div>
     ${detailHtml}
@@ -2318,7 +2569,7 @@ function renderLogisticsTable(items) {
         <td class="meta">${o.etaDate || '—'}</td>
         <td>${progress}</td>
         <td class="note-cell" title="${o.note||''}">${o.note || ''}</td>
-        <td class="act"><button class="lg-edit" onclick="openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
+        <td class="act admin-only"><button class="lg-edit" onclick="openShipModal(${o.id})" title="${t('action.edit')}">📅</button></td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
@@ -2353,9 +2604,11 @@ document.getElementById('pay-modal').addEventListener('click', (e) => {
 // ── Init ──────────────────────────────────────────────
 window.refresh = refresh;
 (async () => {
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  const ok = await checkAuth();
+  if (!ok) return; // login overlay is showing; data load happens after successful login
   await loadSettings();
   await loadData();
-  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
   refresh();
   showView('orders');
 })();
