@@ -30,16 +30,23 @@ if ($method === 'GET' && $id === null) {
   $stmt->execute($ids);
   $photos = $stmt->fetchAll();
 
+  $stmt = $db->prepare("SELECT * FROM order_files WHERE order_id IN ($ph) ORDER BY id ASC");
+  $stmt->execute($ids);
+  $files = $stmt->fetchAll();
+
   $allocByOrder = [];
   foreach ($allocs as $a) { $allocByOrder[(int)$a['order_id']][] = $a; }
   $photoByOrder = [];
   foreach ($photos as $p) { $photoByOrder[(int)$p['order_id']][] = $p; }
+  $fileByOrder = [];
+  foreach ($files as $f) { $fileByOrder[(int)$f['order_id']][] = $f; }
 
   $result = [];
   foreach ($orders as $o) {
     $oid = (int)$o['id'];
     $oAllocs = $allocByOrder[$oid] ?? [];
     $oPhotos = $photoByOrder[$oid] ?? [];
+    $oFiles  = $fileByOrder[$oid] ?? [];
     $paid = 0.0;
     foreach ($oAllocs as $a) $paid += (float)$a['amount'];
     $result[] = [
@@ -69,6 +76,12 @@ if ($method === 'GET' && $id === null) {
         'isAuto' => (bool)$a['is_auto'],
       ], $oAllocs),
       'photos' => array_map(fn($p) => $p['photo_path'], $oPhotos),
+      'files' => array_map(fn($f) => [
+        'url' => $f['file_path'],
+        'name' => $f['file_name'],
+        'size' => (int)$f['file_size'],
+        'mime' => $f['mime_type'] ?? '',
+      ], $oFiles),
     ];
   }
   respond($result);
@@ -152,6 +165,16 @@ if ($method === 'POST' && $id === null) {
     foreach ($b['photos'] ?? [] as $url) {
       $stmt = $db->prepare('INSERT INTO order_photos (order_id, photo_path) VALUES (?, ?)');
       $stmt->execute([$orderId, $url]);
+    }
+    foreach ($b['files'] ?? [] as $f) {
+      $stmt = $db->prepare('INSERT INTO order_files (order_id, file_path, file_name, file_size, mime_type) VALUES (?, ?, ?, ?, ?)');
+      $stmt->execute([
+        $orderId,
+        (string)($f['url']  ?? ''),
+        (string)($f['name'] ?? ''),
+        (int)($f['size']    ?? 0),
+        (string)($f['mime'] ?? ''),
+      ]);
     }
 
     $db->commit();

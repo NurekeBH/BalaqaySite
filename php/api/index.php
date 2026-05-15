@@ -56,6 +56,8 @@ try {
       require __DIR__ . '/payments.php'; break;
     case 'photos':
       require __DIR__ . '/photos.php'; break;
+    case 'files':
+      require __DIR__ . '/files.php'; break;
     case 'settings':
       require __DIR__ . '/settings.php'; break;
     case 'suppliers':

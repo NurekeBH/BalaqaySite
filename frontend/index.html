@@ -759,6 +759,34 @@
   .alloc-pill { display: inline-block; background: var(--blue-light); color: var(--blue); padding: 2px 6px; border-radius: 4px; margin-right: 4px; font-size: 11px; }
   .alloc-pill.auto { background: #f3f4f6; color: var(--text2); }
 
+  /* File attachments */
+  .file-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .file-item {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 6px;
+    padding: 6px 10px; font-size: 13px; max-width: 280px;
+  }
+  .file-item .fi-icon { font-size: 18px; flex-shrink: 0; }
+  .file-item .fi-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-item .fi-size { color: var(--text3); font-size: 11px; flex-shrink: 0; }
+  .file-item .fi-del {
+    margin-left: 4px; background: transparent; border: none; cursor: pointer;
+    color: var(--text3); font-size: 14px; padding: 0 4px;
+  }
+  .file-item .fi-del:hover { color: var(--red); }
+  .file-list-large .file-item { width: 100%; max-width: none; padding: 10px 12px; font-size: 14px; }
+  .file-list-large .file-item .fi-icon { font-size: 22px; }
+
+  /* File-count badge in table cells (same style as photo-count-badge) */
+  .file-count-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--blue-light); color: var(--blue);
+    padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--blue-border);
+  }
+  .file-count-badge:hover { background: var(--blue); color: white; }
+  .file-count-badge.empty { background: var(--bg); color: var(--text3); border-color: var(--border2); }
+
   /* Supplier category group */
   .cat-head {
     display: flex; align-items: baseline; gap: 12px;
@@ -1040,6 +1068,18 @@
         </div>
         <div class="photo-list" id="new-order-photos"></div>
       </div>
+
+      <!-- Document file upload area for new order (PDF / Excel / Word / CSV) -->
+      <div class="photo-area" style="margin-top:12px">
+        <div class="photo-area-label">
+          <span data-i18n="hint.files">📎 қосымша файлдар (PDF / Excel)</span>
+          <label class="photo-upload-btn">
+            <span data-i18n="btn.addFile">+ файл қосу</span>
+            <input type="file" accept=".pdf,.xls,.xlsx,.doc,.docx,.csv,.txt,.ppt,.pptx,.rtf,.zip" multiple onchange="handleNewOrderFile(event)" />
+          </label>
+        </div>
+        <div class="file-list" id="new-order-files"></div>
+      </div>
     </div>
   </div>
 
@@ -1133,6 +1173,25 @@
         <input type="file" id="modal-photo-input" accept="image/*" multiple onchange="addPhotosToOrder(event)" />
       </label>
       <div class="modal-photo-grid" id="modal-photo-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Files modal (manage attached PDFs / Excel / etc. for an order) -->
+<div class="modal-bg" id="files-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="files-modal-title">📎</div>
+      <button class="modal-close" onclick="closeFilesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="modal-upload-zone admin-only" for="modal-file-input">
+        <div style="font-size:28px;margin-bottom:6px">📎</div>
+        <div style="font-weight:500" data-i18n="files.uploadHint">Файл жүктеу үшін басыңыз</div>
+        <div style="font-size:13px;margin-top:4px;color:var(--text3)" data-i18n="files.allowed">PDF · Excel · Word · CSV · ZIP — макс 20 MB</div>
+        <input type="file" id="modal-file-input" accept=".pdf,.xls,.xlsx,.doc,.docx,.csv,.txt,.ppt,.pptx,.rtf,.zip" multiple onchange="addFilesToOrderModal(event)" />
+      </label>
+      <div class="file-list-large" id="modal-file-list" style="margin-top:14px"></div>
     </div>
   </div>
 </div>
@@ -1319,6 +1378,32 @@ async function uploadPhoto(file) {
   return url;
 }
 
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+  const r = await fetch(API + '/files/upload', { method: 'POST', credentials: 'include', body: fd });
+  if (r.status === 401) { showLogin(); throw new Error('not authenticated'); }
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();   // { url, name, size, mime }
+}
+
+function fileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['xls','xlsx','csv'].includes(ext)) return '📊';
+  if (['doc','docx','rtf','txt'].includes(ext)) return '📝';
+  if (['ppt','pptx'].includes(ext)) return '📑';
+  if (ext === 'zip') return '🗜';
+  return '📎';
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
 function photoSrc(p) {
   if (!p) return '';
   if (p.startsWith('data:') || p.startsWith('http')) return p;
@@ -1471,7 +1556,9 @@ let suppliers = [];
 let activeFilter = 'all';
 let activeView = 'todo';   // 'todo' | 'orders' | 'suppliers'
 let pendingPhotos = [];      // uploaded URLs awaiting attachment to a new order
+let pendingFiles  = [];      // uploaded file objects {url,name,size,mime} awaiting attachment
 let currentPhotoOrderId = null;
+let currentFilesOrderId = null;
 let expandedSuppliers = new Set();
 let expandedCategories = new Set();   // empty = all collapsed by default
 let expandedTodoSections = new Set(); // empty = all collapsed by default
@@ -1881,6 +1968,98 @@ function removePendingPhoto(i) {
   renderPendingPhotos();
 }
 
+// ── New-order file attachments ────────────────────────
+async function handleNewOrderFile(event) {
+  const files = Array.from(event.target.files || []);
+  for (const file of files) {
+    try { pendingFiles.push(await uploadFile(file)); }
+    catch(e) { console.error(e); alert(t('alert.uploadFail', { e: e.message })); }
+  }
+  event.target.value = '';
+  renderPendingFiles();
+}
+
+function renderPendingFiles() {
+  const wrap = document.getElementById('new-order-files');
+  wrap.innerHTML = pendingFiles.map((f, i) => `
+    <div class="file-item">
+      <span class="fi-icon">${fileIcon(f.name)}</span>
+      <a href="${photoSrc(f.url)}" target="_blank" rel="noopener" class="fi-name" title="${f.name}">${f.name}</a>
+      <span class="fi-size">${fmtSize(f.size)}</span>
+      <button class="fi-del" onclick="removePendingFile(${i})" title="${t('action.delete')}">✕</button>
+    </div>
+  `).join('');
+}
+
+function removePendingFile(i) {
+  pendingFiles.splice(i, 1);
+  renderPendingFiles();
+}
+
+// ── Files modal (manage files for an existing order) ──
+window.openFilesModal = function (orderId) {
+  currentFilesOrderId = orderId;
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  document.getElementById('files-modal-title').textContent = '📎 ' + o.name;
+  renderModalFiles();
+  document.getElementById('files-modal').classList.add('show');
+};
+
+window.closeFilesModal = function () {
+  document.getElementById('files-modal').classList.remove('show');
+  currentFilesOrderId = null;
+};
+
+function renderModalFiles() {
+  const o = orders.find(x => x.id === currentFilesOrderId);
+  if (!o) return;
+  const wrap = document.getElementById('modal-file-list');
+  const files = o.files || [];
+  if (!files.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:14px">${t('files.none')}</div>`;
+    return;
+  }
+  wrap.innerHTML = files.map((f, idx) => `
+    <div class="file-item">
+      <span class="fi-icon">${fileIcon(f.name)}</span>
+      <a href="${photoSrc(f.url)}" target="_blank" rel="noopener" class="fi-name" title="${f.name}">${f.name}</a>
+      <span class="fi-size">${fmtSize(f.size)}</span>
+      ${isAdmin() ? `<button class="fi-del" onclick="deleteOrderFile(${idx})" title="${t('action.delete')}">🗑</button>` : ''}
+    </div>
+  `).join('');
+}
+
+window.addFilesToOrderModal = async function (event) {
+  const o = orders.find(x => x.id === currentFilesOrderId);
+  if (!o) return;
+  if (!o.files) o.files = [];
+  const files = Array.from(event.target.files || []);
+  for (const file of files) {
+    try {
+      const meta = await uploadFile(file);
+      await apiPost('/files/order/' + o.id, meta);
+      o.files.push(meta);
+    } catch(e) { alert(t('alert.uploadFail', { e: e.message })); }
+  }
+  event.target.value = '';
+  renderModalFiles();
+  refresh();
+  showToast('✓ ' + files.length);
+};
+
+window.deleteOrderFile = async function (idx) {
+  const o = orders.find(x => x.id === currentFilesOrderId);
+  if (!o || !o.files) return;
+  if (!confirm(t('confirm.delFile'))) return;
+  const f = o.files[idx];
+  try { await apiDelete('/files/order/' + o.id, { url: f.url }); }
+  catch (e) { alert(t('alert.deleteFail', { e: e.message })); return; }
+  o.files.splice(idx, 1);
+  renderModalFiles();
+  refresh();
+};
+
 // ── Photo Modal ───────────────────────────────────────
 function openPhotoModal(orderId) {
   currentPhotoOrderId = orderId;
@@ -2073,6 +2252,7 @@ function renderOrderTable(data, rate) {
       <th>${t('tbl.status')}</th>
       <th>${t('tbl.ship')}</th>
       <th>${t('tbl.photos')}</th>
+      <th>${t('tbl.files')}</th>
       <th>${t('tbl.note')}</th>
       <th></th>
     </tr></thead><tbody>`;
@@ -2097,6 +2277,14 @@ function renderOrderTable(data, rate) {
       </div>`;
     } else if (isAdmin()) {
       photoCell = `<span class="photo-count-badge empty" onclick="openPhotoModal(${o.id})">${t('photos.upload')}</span>`;
+    }
+
+    const fileCount = (o.files || []).length;
+    let fileCell = '';
+    if (fileCount > 0) {
+      fileCell = `<span class="file-count-badge" onclick="openFilesModal(${o.id})">📎 ${fileCount}</span>`;
+    } else if (isAdmin()) {
+      fileCell = `<span class="file-count-badge empty" onclick="openFilesModal(${o.id})">📎 +</span>`;
     }
 
     const payCount = (o.allocations || []).length;
@@ -2165,6 +2353,7 @@ function renderOrderTable(data, rate) {
       <td data-label="${t('tbl.status')}">${badge}</td>
       <td data-label="${t('tbl.ship')}">${shipCell}</td>
       <td data-label="${t('tbl.photos')}">${photoCell}</td>
+      <td data-label="${t('tbl.files')}">${fileCell}</td>
       <td data-label="${t('tbl.note')}" style="font-size: 14px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.note||''}">${o.note||''}</td>
       <td class="admin-only no-label">
         <button class="btn btn-sm btn-icon" onclick="startEdit(${o.id})" title="${t('action.edit')}">✏</button>
@@ -2196,8 +2385,8 @@ function startEdit(id) {
     ${CATS.map(([v,k]) => `<option value="${v}" ${v===o.cat?'selected':''}>${t(k)}</option>`).join('')}
   </select>`;
   cells[4].innerHTML = `<input class="edit-input" type="number" id="edit-total-${id}" value="${o.total}" style="text-align:right" />`;
-  cells[12].innerHTML = `<input class="edit-input edit-input-sm" id="edit-note-${id}" value="${o.note||''}" />`;
-  cells[13].innerHTML = `
+  cells[13].innerHTML = `<input class="edit-input edit-input-sm" id="edit-note-${id}" value="${o.note||''}" />`;
+  cells[14].innerHTML = `
     <button class="btn btn-sm btn-primary btn-icon" onclick="saveEdit(${id})" title="${t('action.save')}">✓</button>
     <button class="btn btn-sm btn-icon" onclick="renderTable()" title="${t('action.cancel')}">✕</button>
   `;
@@ -2290,6 +2479,7 @@ async function addOrder() {
       initialPaid: paid, initialPayNote: t('pay.firstPayment'),
       rate: getRate(),
       photos: [...pendingPhotos],
+      files: [...pendingFiles],
     });
   } catch (e) { alert(t('alert.addFail', { e: e.message })); return; }
 
@@ -2303,7 +2493,9 @@ async function addOrder() {
   document.getElementById('f-eta-date').value = '';
   document.getElementById('preview').textContent = t('hint.preview');
   pendingPhotos = [];
+  pendingFiles = [];
   renderPendingPhotos();
+  renderPendingFiles();
 
   await loadData();
   refresh();
