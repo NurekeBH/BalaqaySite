@@ -945,6 +945,7 @@
     </div>
     <button class="btn" data-i18n="btn.export" onclick="exportCSV()">⬇ 导出CSV</button>
     <button class="btn" data-i18n="btn.print" onclick="printPage()">🖨 打印</button>
+    <button class="btn admin-only" data-i18n="btn.categories" onclick="openCategoriesModal()">🏷 类别</button>
     <button class="btn admin-only" data-i18n="btn.users" onclick="openUsersModal()">👥 用户</button>
     <div class="user-chip" id="user-chip" style="display:none">
       <span id="uc-name"></span> · <span class="role" id="uc-role"></span>
@@ -1297,6 +1298,33 @@
   </div>
 </div>
 
+<!-- Categories management modal (admin only) -->
+<div class="modal-bg" id="categories-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">🏷 <span data-i18n="categories.title">Санаттар</span></div>
+      <button class="modal-close" onclick="closeCategoriesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--blue-light);border:1px dashed var(--blue);padding:14px;border-radius:8px;margin-bottom:14px">
+        <div style="font-weight:600;color:var(--blue);margin-bottom:10px" data-i18n="categories.add">+ Жаңа санат</div>
+        <form onsubmit="addCategory(event)" style="display:flex;gap:10px;align-items:end">
+          <div style="flex:1">
+            <label data-i18n="categories.name" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Аты</label>
+            <input id="nc-name" required maxlength="50" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit" />
+          </div>
+          <div style="width:100px">
+            <label data-i18n="categories.sort" style="display:block;font-size:13px;color:var(--text2);margin-bottom:5px">Рет</label>
+            <input id="nc-sort" type="number" value="100" style="width:100%;height:36px;padding:0 10px;border:1px solid var(--border2);border-radius:6px;font-family:inherit" />
+          </div>
+          <button class="btn btn-primary" type="submit" data-i18n="users.create">Қосу</button>
+        </form>
+      </div>
+      <div id="categories-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Users management modal (admin only) -->
 <div class="modal-bg" id="users-modal">
   <div class="modal" style="max-width:720px">
@@ -1550,9 +1578,83 @@ window.deleteUser = async function (id, name) {
   catch (e) { alert(e.message); }
 };
 
+// ── Categories management ────────────────────────────
+window.openCategoriesModal = async function () {
+  document.getElementById('categories-modal').classList.add('show');
+  await renderCategoriesList();
+};
+window.closeCategoriesModal = function () {
+  document.getElementById('categories-modal').classList.remove('show');
+};
+
+async function renderCategoriesList() {
+  const wrap = document.getElementById('categories-list');
+  try {
+    const cats = await apiGet('/categories');
+    categories = cats; // sync global
+    wrap.innerHTML = `<table class="users-grid"><thead><tr>
+      <th>${t('categories.sort')}</th><th>${t('categories.name')}</th><th></th>
+    </tr></thead><tbody>${cats.map(c => `
+      <tr>
+        <td style="width:60px"><input type="number" value="${c.sortOrder}" style="width:60px;height:30px;padding:0 6px;border:1px solid var(--border2);border-radius:4px;font-family:inherit" onchange="updateCategorySort(${c.id}, this.value)" /></td>
+        <td><strong>${c.name}</strong></td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn btn-sm" onclick="renameCategory(${c.id}, '${c.name.replace(/'/g,"\\'")}')" title="${t('action.edit')}">✏</button>
+          <button class="btn btn-sm btn-icon btn-danger" onclick="deleteCategory(${c.id}, '${c.name.replace(/'/g,"\\'")}')" title="${t('action.delete')}">🗑</button>
+        </td>
+      </tr>
+    `).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<div style="color:var(--red)">${e.message}</div>`;
+  }
+}
+
+window.addCategory = async function (e) {
+  e.preventDefault();
+  const name = document.getElementById('nc-name').value.trim();
+  const sortOrder = parseInt(document.getElementById('nc-sort').value, 10) || 100;
+  try {
+    await apiSend('POST', '/categories', { name, sortOrder });
+    document.getElementById('nc-name').value = '';
+    document.getElementById('nc-sort').value = 100;
+    await renderCategoriesList();
+    await loadData();
+    refresh();
+    showToast('✓ ' + t('toast.added'));
+  } catch (e) { alert(e.message); }
+};
+
+window.updateCategorySort = async function (id, value) {
+  try { await apiSend('PUT', '/categories/' + id, { sortOrder: parseInt(value, 10) || 100 });
+    await loadData(); refresh(); }
+  catch (e) { alert(e.message); }
+};
+
+window.renameCategory = async function (id, oldName) {
+  const newName = prompt(t('categories.renamePrompt'), oldName);
+  if (!newName || newName === oldName) return;
+  try {
+    await apiSend('PUT', '/categories/' + id, { name: newName.trim() });
+    await renderCategoriesList();
+    await loadData(); refresh();
+    showToast('✓ ' + t('toast.updated'));
+  } catch (e) { alert(e.message); }
+};
+
+window.deleteCategory = async function (id, name) {
+  if (!confirm(t('categories.delConfirm', { name }))) return;
+  try {
+    await apiSend('DELETE', '/categories/' + id, {});
+    await renderCategoriesList();
+    await loadData(); refresh();
+    showToast('✓ ' + t('toast.deleted'));
+  } catch (e) { alert(e.message); }
+};
+
 // ── Data ──────────────────────────────────────────────
 let orders = [];
 let suppliers = [];
+let categories = [];   // [{id, name, sortOrder}], loaded from API
 let activeFilter = 'all';
 let activeView = 'todo';   // 'todo' | 'orders' | 'suppliers'
 let pendingPhotos = [];      // uploaded URLs awaiting attachment to a new order
@@ -1570,12 +1672,24 @@ function isAdmin() { return currentAuthUser && currentAuthUser.role === 'admin';
 
 async function loadData() {
   try {
-    [orders, suppliers] = await Promise.all([apiGet('/orders'), apiGet('/suppliers')]);
+    [orders, suppliers, categories] = await Promise.all([
+      apiGet('/orders'), apiGet('/suppliers'), apiGet('/categories'),
+    ]);
+    refreshCategoryDropdowns();
   } catch (e) {
     console.error(e);
     alert(t('alert.backendConn'));
-    orders = []; suppliers = [];
+    orders = []; suppliers = []; categories = [];
   }
+}
+
+// Sync the static <select id="f-cat"> with the current categories list
+function refreshCategoryDropdowns() {
+  const sel = document.getElementById('f-cat');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = categories.map(c => `<option value="${c.name}">${catLabel(c.name)}</option>`).join('');
+  if (current && categories.some(c => c.name === current)) sel.value = current;
 }
 
 async function loadSettings() {
@@ -1600,6 +1714,9 @@ async function saveRate(v) {
 function getRate() { return parseFloat(document.getElementById('rate').value) || 65.5; }
 const CAT_KEYS = {'箱包':'cat.boxes','服装-童装':'cat.clothesKids','服装-成人':'cat.clothesAdult','鞋类':'cat.shoes','帽子':'cat.hats','义乌杂货':'cat.yiwu','其他':'cat.other'};
 function catLabel(c) { return CAT_KEYS[c] ? t(CAT_KEYS[c]) : (c || ''); }
+function categoryNames() {
+  return categories.length ? categories.map(c => c.name) : Object.keys(CAT_KEYS);
+}
 function fmt(n) { return Math.round(n).toLocaleString('zh-CN'); }
 function fmtTg(n) { return fmt(n * getRate()); }  // legacy: uses current header rate (only for new-entry previews)
 function totalPaid(o) { return Number(o.paid) || 0; }
@@ -2377,12 +2494,8 @@ function startEdit(id) {
   const cells = tr.children;
   cells[1].innerHTML = `<input class="edit-input edit-input-sm" type="date" id="edit-date-${id}" value="${o.date||''}" />`;
   cells[2].innerHTML = `<input class="edit-input" id="edit-name-${id}" value="${o.name||''}" />`;
-  const CATS = [
-    ['箱包','cat.boxes'],['服装-童装','cat.clothesKids'],['服装-成人','cat.clothesAdult'],
-    ['鞋类','cat.shoes'],['帽子','cat.hats'],['义乌杂货','cat.yiwu'],['其他','cat.other']
-  ];
   cells[3].innerHTML = `<select class="edit-input" id="edit-cat-${id}">
-    ${CATS.map(([v,k]) => `<option value="${v}" ${v===o.cat?'selected':''}>${t(k)}</option>`).join('')}
+    ${categoryNames().map(c => `<option value="${c}" ${c===o.cat?'selected':''}>${catLabel(c)}</option>`).join('')}
   </select>`;
   cells[4].innerHTML = `<input class="edit-input" type="number" id="edit-total-${id}" value="${o.total}" style="text-align:right" />`;
   cells[13].innerHTML = `<input class="edit-input edit-input-sm" id="edit-note-${id}" value="${o.note||''}" />`;
@@ -2595,7 +2708,8 @@ function printPage() { window.print(); }
 function tagClass(tag) { return tag === 'strict' ? 'strict' : tag === 'important' ? 'important' : 'flexible'; }
 function tagLabel(tag) { return tag === 'strict' ? t('sup.tag.strict') : tag === 'important' ? t('sup.tag.important') : t('sup.tag.flexible'); }
 
-const CAT_ORDER = ['箱包','服装-童装','服装-成人','鞋类','帽子','义乌杂货','其他'];
+// Pulled from server; falls back to built-ins if not loaded
+function CAT_ORDER() { return categoryNames(); }
 
 function renderSupplierCard(s) {
   const expanded = expandedSuppliers.has(s.id);
@@ -2661,9 +2775,10 @@ function renderSuppliers() {
     const k = s.primaryCategory || '其他';
     (groups[k] = groups[k] || []).push(s);
   });
+  const order = CAT_ORDER();
   const orderedKeys = [
-    ...CAT_ORDER.filter(k => groups[k]),
-    ...Object.keys(groups).filter(k => !CAT_ORDER.includes(k)),
+    ...order.filter(k => groups[k]),
+    ...Object.keys(groups).filter(k => !order.includes(k)),
   ];
   orderedKeys.forEach(k => groups[k].sort((a,b) => (b.pinned-a.pinned) || a.name.localeCompare(b.name)));
 
@@ -2695,13 +2810,14 @@ window.toggleCategory = function (k) {
 
 async function editSupplierCategory(id) {
   const s = supplierById(id); if (!s) return;
-  const idx = CAT_ORDER.indexOf(s.primaryCategory);
-  const labels = CAT_ORDER.map((c, i) => `${i+1}. ${catLabel(c)}${c===s.primaryCategory?' ✓':''}`).join('\n');
-  const pick = prompt(`${t('sup.editTag')}\n\n${labels}\n\n${t('select.placeholder')} (1-${CAT_ORDER.length})`, String((idx>=0?idx:0)+1));
+  const order = CAT_ORDER();
+  const idx = order.indexOf(s.primaryCategory);
+  const labels = order.map((c, i) => `${i+1}. ${catLabel(c)}${c===s.primaryCategory?' ✓':''}`).join('\n');
+  const pick = prompt(`${t('sup.editTag')}\n\n${labels}\n\n${t('select.placeholder')} (1-${order.length})`, String((idx>=0?idx:0)+1));
   if (pick === null) return;
   const num = parseInt(pick, 10);
-  if (!num || num < 1 || num > CAT_ORDER.length) return;
-  const newCat = CAT_ORDER[num - 1];
+  if (!num || num < 1 || num > order.length) return;
+  const newCat = order[num - 1];
   if (newCat === s.primaryCategory) return;
   try { await apiPut('/suppliers/' + id, { primaryCategory: newCat }); }
   catch (e) { alert(t('alert.saveFail', { e: e.message })); return; }

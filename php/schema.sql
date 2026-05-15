@@ -91,6 +91,19 @@ CREATE TABLE IF NOT EXISTS settings (
   v  VARCHAR(200) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- User-managed categories (admin adds/renames/deletes via UI)
+CREATE TABLE IF NOT EXISTS categories (
+  id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name       VARCHAR(50) NOT NULL UNIQUE,
+  sort_order INT NOT NULL DEFAULT 100,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO categories (name, sort_order) VALUES
+  ('箱包',      10),  ('服装-童装', 20),  ('服装-成人', 30),
+  ('鞋类',      40),  ('帽子',      50),  ('义乌杂货',  60),
+  ('其他',     999);
+
 INSERT IGNORE INTO settings (k, v) VALUES ('rate', '65.5');
 
 -- Users (login/role). Default admin: username 'admin', password 'admin123'

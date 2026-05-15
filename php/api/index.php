@@ -58,6 +58,8 @@ try {
       require __DIR__ . '/photos.php'; break;
     case 'files':
       require __DIR__ . '/files.php'; break;
+    case 'categories':
+      require __DIR__ . '/categories.php'; break;
     case 'settings':
       require __DIR__ . '/settings.php'; break;
     case 'suppliers':
