@@ -772,7 +772,10 @@ window.t = function (key, params) {
 window.setLang = function (lang) {
   window.CURRENT_LANG = lang;
   localStorage.setItem('lang', lang);
-  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang;
+  const htmlLang = lang === 'zh' ? 'zh-CN' : lang === 'ru' ? 'ru-RU' : 'kk-KZ';
+  document.documentElement.lang = htmlLang;
+  // Force date inputs to render in the chosen locale (Safari/Chrome usually respect input.lang)
+  document.querySelectorAll('input[type="date"]').forEach(el => el.lang = htmlLang);
   window.applyTranslations();
   if (window.refresh) window.refresh();
   // persist to backend
@@ -797,4 +800,7 @@ window.applyTranslations = function () {
     const key = el.getAttribute('data-i18n-title');
     el.setAttribute('title', window.t(key));
   });
+  // Apply current locale to date inputs
+  const htmlLang = window.CURRENT_LANG === 'zh' ? 'zh-CN' : window.CURRENT_LANG === 'ru' ? 'ru-RU' : 'kk-KZ';
+  document.querySelectorAll('input[type="date"]').forEach(el => el.lang = htmlLang);
 };

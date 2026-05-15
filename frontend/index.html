@@ -589,8 +589,22 @@
     #lang-select { font-size: 12px; height: 28px; padding: 0 4px; }
     .user-chip { font-size: 12px; padding: 3px 8px; }
 
-    /* View tabs: tighter */
-    .view-tab { padding: 10px 6px; font-size: 13px; font-weight: 600; }
+    /* View tabs: 2×2 grid on mobile so all 4 fit */
+    .view-tabs { flex-wrap: wrap; }
+    .view-tab {
+      flex: 1 1 50%;
+      max-width: 50%;
+      padding: 10px 6px;
+      font-size: 13px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .view-tab:nth-child(odd) { border-right: 1px solid var(--border); }
+    .view-tab.active { border-bottom-color: var(--blue); }
+    /* Shipping info grid: 3-col inline → 1-col stack on phone */
+    .photo-area[style*="background:#fffbeb"] > div[style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
 
     /* Stats: single column on small phones */
     .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
